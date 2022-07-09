@@ -28,12 +28,76 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            this.bPlay = new System.Windows.Forms.Button();
+            this.lTitle = new System.Windows.Forms.Label();
+            this.lAuthor = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
+            this.SuspendLayout();
+            // 
+            // bPlay
+            // 
+            this.bPlay.Location = new System.Drawing.Point(350, 300);
+            this.bPlay.Name = "bPlay";
+            this.bPlay.Size = new System.Drawing.Size(75, 23);
+            this.bPlay.TabIndex = 2;
+            this.bPlay.Text = "PLAY";
+            this.bPlay.UseVisualStyleBackColor = true;
+            // 
+            // lTitle
+            // 
+            this.lTitle.AutoSize = true;
+            this.lTitle.Font = new System.Drawing.Font("Segoe UI", 64F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lTitle.ForeColor = System.Drawing.Color.Gold;
+            this.lTitle.Location = new System.Drawing.Point(191, 107);
+            this.lTitle.Name = "lTitle";
+            this.lTitle.Size = new System.Drawing.Size(392, 114);
+            this.lTitle.TabIndex = 3;
+            this.lTitle.Text = "PACMAN";
+            // 
+            // lAuthor
+            // 
+            this.lAuthor.AutoSize = true;
+            this.lAuthor.ForeColor = System.Drawing.Color.WhiteSmoke;
+            this.lAuthor.Location = new System.Drawing.Point(440, 221);
+            this.lAuthor.Name = "lAuthor";
+            this.lAuthor.Size = new System.Drawing.Size(121, 15);
+            this.lAuthor.TabIndex = 4;
+            this.lAuthor.Text = "by Jakub Landsperský";
+            // 
+            // button1
+            // 
+            this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
+            this.button1.Location = new System.Drawing.Point(743, 9);
+            this.button1.Margin = new System.Windows.Forms.Padding(0);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(48, 47);
+            this.button1.TabIndex = 5;
+            this.button1.UseVisualStyleBackColor = true;
+            // 
+            // Form1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.Desktop;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "Form1";
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.lAuthor);
+            this.Controls.Add(this.lTitle);
+            this.Controls.Add(this.bPlay);
+            this.Name = "Form1";
+            this.Text = "Welcome Screen";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         #endregion
+        private Button bPlay;
+        private Label lTitle;
+        private Label lAuthor;
+        private Button button1;
     }
 }

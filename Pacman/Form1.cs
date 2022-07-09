@@ -6,5 +6,6 @@ namespace Pacman
         {
             InitializeComponent();
         }
+
     }
 }
