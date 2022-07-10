@@ -32,7 +32,7 @@
             this.bPlay = new System.Windows.Forms.Button();
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
+            this.bSettings = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // bPlay
@@ -43,6 +43,7 @@
             this.bPlay.TabIndex = 2;
             this.bPlay.Text = "PLAY";
             this.bPlay.UseVisualStyleBackColor = true;
+            this.bPlay.Click += new System.EventHandler(this.bPlay_Click);
             // 
             // lTitle
             // 
@@ -65,17 +66,17 @@
             this.lAuthor.TabIndex = 4;
             this.lAuthor.Text = "by Jakub Landsperský";
             // 
-            // button1
+            // bSettings
             // 
-            this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
-            this.button1.Location = new System.Drawing.Point(743, 9);
-            this.button1.Margin = new System.Windows.Forms.Padding(0);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(48, 47);
-            this.button1.TabIndex = 5;
-            this.button1.UseVisualStyleBackColor = true;
+            this.bSettings.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.bSettings.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.bSettings.Image = ((System.Drawing.Image)(resources.GetObject("bSettings.Image")));
+            this.bSettings.Location = new System.Drawing.Point(743, 9);
+            this.bSettings.Margin = new System.Windows.Forms.Padding(0);
+            this.bSettings.Name = "bSettings";
+            this.bSettings.Size = new System.Drawing.Size(48, 47);
+            this.bSettings.TabIndex = 5;
+            this.bSettings.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -83,7 +84,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Desktop;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.bSettings);
             this.Controls.Add(this.lAuthor);
             this.Controls.Add(this.lTitle);
             this.Controls.Add(this.bPlay);
@@ -98,6 +99,6 @@
         private Button bPlay;
         private Label lTitle;
         private Label lAuthor;
-        private Button button1;
+        private Button bSettings;
     }
 }
