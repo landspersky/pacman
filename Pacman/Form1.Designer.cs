@@ -28,11 +28,13 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.bPlay = new System.Windows.Forms.Button();
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
             this.bSettings = new System.Windows.Forms.Button();
+            this.timer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // bPlay
@@ -78,18 +80,22 @@
             this.bSettings.TabIndex = 5;
             this.bSettings.UseVisualStyleBackColor = true;
             // 
+            // timer
+            // 
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Desktop;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(800, 661);
             this.Controls.Add(this.bSettings);
             this.Controls.Add(this.lAuthor);
             this.Controls.Add(this.lTitle);
             this.Controls.Add(this.bPlay);
             this.Name = "Form1";
-            this.Text = "Welcome Screen";
+            this.Text = "PACMAN";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -100,5 +106,6 @@
         private Label lTitle;
         private Label lAuthor;
         private Button bSettings;
+        private System.Windows.Forms.Timer timer;
     }
 }
