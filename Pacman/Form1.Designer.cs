@@ -35,6 +35,9 @@
             this.lAuthor = new System.Windows.Forms.Label();
             this.bSettings = new System.Windows.Forms.Button();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.lLives = new System.Windows.Forms.Label();
+            this.lScore = new System.Windows.Forms.Label();
+            this.bMenu = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // bPlay
@@ -84,12 +87,45 @@
             // 
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
+            // lLives
+            // 
+            this.lLives.AutoSize = true;
+            this.lLives.ForeColor = System.Drawing.Color.WhiteSmoke;
+            this.lLives.Location = new System.Drawing.Point(219, 67);
+            this.lLives.Name = "lLives";
+            this.lLives.Size = new System.Drawing.Size(45, 15);
+            this.lLives.TabIndex = 6;
+            this.lLives.Text = "Lives: 3";
+            // 
+            // lScore
+            // 
+            this.lScore.AutoSize = true;
+            this.lScore.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lScore.ForeColor = System.Drawing.Color.WhiteSmoke;
+            this.lScore.Location = new System.Drawing.Point(403, 57);
+            this.lScore.Name = "lScore";
+            this.lScore.Size = new System.Drawing.Size(22, 25);
+            this.lScore.TabIndex = 7;
+            this.lScore.Text = "0";
+            // 
+            // bMenu
+            // 
+            this.bMenu.Location = new System.Drawing.Point(565, 63);
+            this.bMenu.Name = "bMenu";
+            this.bMenu.Size = new System.Drawing.Size(75, 23);
+            this.bMenu.TabIndex = 8;
+            this.bMenu.Text = "Menu";
+            this.bMenu.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Desktop;
             this.ClientSize = new System.Drawing.Size(800, 661);
+            this.Controls.Add(this.bMenu);
+            this.Controls.Add(this.lScore);
+            this.Controls.Add(this.lLives);
             this.Controls.Add(this.bSettings);
             this.Controls.Add(this.lAuthor);
             this.Controls.Add(this.lTitle);
@@ -107,5 +143,8 @@
         private Label lAuthor;
         private Button bSettings;
         private System.Windows.Forms.Timer timer;
+        private Label lLives;
+        private Label lScore;
+        private Button bMenu;
     }
 }
