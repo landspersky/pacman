@@ -68,6 +68,7 @@ namespace Pacman
         Graphics g;
         StatusBar statusBar;
         Point coords;
+        KeyPressed keyPressed = KeyPressed.none;
 
         private void bPlay_Click(object sender, EventArgs e)
         {
@@ -81,12 +82,16 @@ namespace Pacman
             switch (map.state)
             {
                 case State.running:
-                    this.SuspendLayout();
+                    map.MoveObjects(keyPressed);
                     if (this.Location != coords)
-                        { eraseScreen(); }
-                    map.Draw(g, ClientSize.Width, ClientSize.Height);
-                    statusBar.Draw(map);
-                    this.ResumeLayout();
+                    {
+                        eraseScreen();
+                    }
+                    else
+                    {
+                        map.Draw(g, ClientSize.Width, ClientSize.Height);
+                        statusBar.Draw(map);
+                    }
                     break;
                 case State.idle:
                     drawMenuScreen();
@@ -103,6 +108,36 @@ namespace Pacman
             eraseScreen();
             map.state = State.idle;
             initializeScreen(Screen.Menu);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Up)
+            {
+                keyPressed = KeyPressed.up;
+                return true;
+            }
+            if (keyData == Keys.Down)
+            {
+                keyPressed = KeyPressed.down;
+                return true;
+            }
+            if (keyData == Keys.Left)
+            {
+                keyPressed = KeyPressed.left;
+                return true;
+            }
+            if (keyData == Keys.Right)
+            {
+                keyPressed = KeyPressed.right;
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        {
+            keyPressed = KeyPressed.none;
         }
     }
 }
