@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 
 namespace Pacman
 {
@@ -91,7 +92,7 @@ namespace Pacman
 
     class StatusBar
     {
-        public int coinsLeft;
+        public int coinsLeft = 0;
         public int livesLeft;
         public int score;
         public int width;
@@ -134,7 +135,7 @@ namespace Pacman
         }
     }
 
-    public enum State { idle, running };
+    public enum State { running, win, loss };
 
     class Map
     {
@@ -144,7 +145,7 @@ namespace Pacman
         public int startx;
         public int starty;
 
-        public State state = State.idle;
+        public State state = State.running;
 
         Bitmap[] icons;
         public int sx;
@@ -220,7 +221,6 @@ namespace Pacman
             height = int.Parse(sr.ReadLine());
             plan = new char[width, height];
 
-            int coins_count = 0;
             for (int y = 0; y < height; y++)
             {
                 string line = sr.ReadLine();
@@ -237,7 +237,7 @@ namespace Pacman
 
                         case '.':
                         case '$':
-                            coins_count++;
+                            statusbar.coinsLeft++;
                             break;
                         default:
                             break;
@@ -245,7 +245,6 @@ namespace Pacman
                 }
             }
             sr.Close();
-            statusbar.coinsLeft = coins_count;
             statusbar.width = width * sx;
         }
 
@@ -260,6 +259,8 @@ namespace Pacman
             {
                 statusbar.coinsLeft--;
                 statusbar.score++;
+                if (statusbar.coinsLeft == 0)
+                    { state = State.win; }
             }
             plan[to_x, to_y] = 'P';
             plan[from_x, from_y] = ' ';

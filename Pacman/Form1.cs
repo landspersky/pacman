@@ -4,26 +4,44 @@ namespace Pacman
     {
         public enum Screen { Menu, Game };
 
+        Map map;
+        Graphics g;
+        StatusBar statusBar;
+        Point coords;
+        KeyPressed keyPressed;
+
         public Form1()
         {
+            g = CreateGraphics();
             InitializeComponent();
             initializeScreen(Screen.Menu);
-
-            timerMenu.Enabled = true;
         }
 
         private void initializeScreen(Screen screen)
         {
+            g = CreateGraphics();
             bool toGame;
             switch (screen)
             {
                 case Screen.Game:
                     toGame = true;
+                    timerMenu.Enabled = false;
+                    this.statusBar = new StatusBar(lLives, lScore, bMenu);
+                    map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
+                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
+                    timerGame.Enabled = true;
+                    break;
+                case Screen.Menu:
+                    toGame = false;
+                    timerGame.Enabled = false;
+                    eraseScreen();
+                    timerMenu.Enabled = true;
                     break;
                 default:
                     toGame = false;
                     break;
             }
+            keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
             bSettings.Visible = !toGame;
             lAuthor.Visible = !toGame;
@@ -60,23 +78,9 @@ namespace Pacman
             g.FillRectangle(blackBrush, rect);
         }
 
-        Map map;
-        Graphics g;
-        StatusBar statusBar;
-        Point coords;
-        KeyPressed keyPressed;
-
         private void bPlay_Click(object sender, EventArgs e)
         {
-            timerMenu.Enabled = false;
-            keyPressed = KeyPressed.none;
-            g = CreateGraphics();
-            this.statusBar = new StatusBar(lLives, lScore, bMenu);
-            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
-            map.state = State.running;
             initializeScreen(Screen.Game);
-            timerGame.Enabled = true;
         }
 
         private void timerGame_Tick(object sender, EventArgs e)
@@ -85,17 +89,19 @@ namespace Pacman
             {
                 case State.running:
                     map.MoveObjects(keyPressed);
-                    if (this.Location != coords)
-                    {
-                        eraseScreen();
-                    }
-                    else
-                    {
-                        map.Draw(g, ClientSize.Width, ClientSize.Height);
-                        statusBar.Draw(map);
-                    }
+
+                    //eraseScreen();
+
+                    map.Draw(g, ClientSize.Width, ClientSize.Height);
+                    statusBar.Draw(map);
+
                     break;
-                // win & loss scenarios
+                case State.win:
+                    timerGame.Enabled = false;
+                    MessageBox.Show("You won!");
+                    initializeScreen(Screen.Menu);
+                    break;
+                // loss scenario
                 default:
                     break;
             }
@@ -109,11 +115,7 @@ namespace Pacman
 
         private void bMenu_Click(object sender, EventArgs e)
         {
-            timerGame.Enabled = false;
-            eraseScreen();
-            map.state = State.idle;
             initializeScreen(Screen.Menu);
-            timerMenu.Enabled = true;
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
