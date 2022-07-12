@@ -8,26 +8,18 @@ namespace Pacman
 
     public enum Direction {  left, up, right, down };
 
-    class Pacman
+    abstract class Character
     {
-        private Map map;
+        protected Map map;
         public int x;
         public int y;
-        public bool opened; // altering between two icons
-        public Direction direction = Direction.left;
+        public abstract void Move();
 
-        public Pacman(Map map, int x, int y)
-        {
-            this.map = map;
-            this.x = x;
-            this.y = y;
-        }
-
-        private (int, int) TargetCoords(Direction direction)
+        protected (int, int) TargetCoords(Direction direction)
         {
             // returns (x, y) of the field that is 'direction' of pacman
-            int target_x = x;
-            int target_y = y;
+            int target_x = this.x;
+            int target_y = this.y;
             switch (direction)
             {
                 case Direction.left:
@@ -47,11 +39,26 @@ namespace Pacman
             }
             return (target_x, target_y);
         }
-        
-        private bool IsFreeSpace(Direction direction)
+
+        protected bool IsFreeSpace(Direction direction)
         {
             var coords = TargetCoords(direction);
             return map.IsFreeSpace(coords.Item1, coords.Item2);
+        }
+    }
+    abstract class Ghost : Character
+    {
+    }
+    class Pacman : Character
+    {
+        public bool opened; // altering between two icons
+        public Direction direction = Direction.left;
+
+        public Pacman(Map map, int x, int y)
+        {
+            this.map = map;
+            this.x = x;
+            this.y = y;
         }
 
         public void Turn(KeyPressed key)
@@ -79,7 +86,7 @@ namespace Pacman
             }
         }
 
-        public void Move()
+        public override void Move()
         {
             (int, int) new_coords = TargetCoords(direction);
 
