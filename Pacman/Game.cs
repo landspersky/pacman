@@ -171,6 +171,7 @@ namespace Pacman
 
         public void Draw(Graphics g, int windowWidth, int windowHeight)
         {
+            pacman.opened = !pacman.opened;
             int midx = windowWidth / 2;
             int midy = windowHeight / 2;
             startx = midx - width * sx / 2;
