@@ -4,30 +4,47 @@ namespace Pacman
     {
         public enum Screen { Menu, Game };
 
+        Map map;
+        Graphics g;
+        StatusBar statusBar;
+        Point coords;
+        KeyPressed keyPressed;
+        Size size;
+        bool frozen;
+
         public Form1()
         {
+            size = this.Size;
+            g = CreateGraphics();
             InitializeComponent();
             initializeScreen(Screen.Menu);
-
-            // we need map for timer
-            this.statusBar = new StatusBar(lLives, lScore, bMenu);
-            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
-            timer.Enabled = true;
         }
 
         private void initializeScreen(Screen screen)
         {
+            g = CreateGraphics();
             bool toGame;
             switch (screen)
             {
                 case Screen.Game:
                     toGame = true;
+                    timerMenu.Enabled = false;
+                    this.statusBar = new StatusBar(lLives, lScore, bMenu);
+                    map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
+                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
+                    timerGame.Enabled = true;
+                    break;
+                case Screen.Menu:
+                    toGame = false;
+                    timerGame.Enabled = false;
+                    eraseScreen();
+                    timerMenu.Enabled = true;
                     break;
                 default:
                     toGame = false;
                     break;
             }
+            keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
             bSettings.Visible = !toGame;
             lAuthor.Visible = !toGame;
@@ -64,45 +81,85 @@ namespace Pacman
             g.FillRectangle(blackBrush, rect);
         }
 
-        Map map;
-        Graphics g;
-        StatusBar statusBar;
-        Point coords;
 
         private void bPlay_Click(object sender, EventArgs e)
         {
-            g = CreateGraphics();
-            map.state = State.running;
             initializeScreen(Screen.Game);
         }
 
-        private void timer_Tick(object sender, EventArgs e)
+        private void timerGame_Tick(object sender, EventArgs e)
         {
             switch (map.state)
             {
                 case State.running:
-                    this.SuspendLayout();
-                    if (this.Location != coords)
-                        { eraseScreen(); }
-                    map.Draw(g, ClientSize.Width, ClientSize.Height);
-                    statusBar.Draw(map);
-                    this.ResumeLayout();
+                    // if the user is changing window size, we don't draw anything
+                    // after adjustment, we need to wipe the screen
+                    if (size == this.Size)
+                    {
+                        if (frozen)
+                        {
+                            eraseScreen();
+                            frozen = false;
+                        }
+                        map.MoveObjects(keyPressed);
+                        map.Draw(g, ClientSize.Width, ClientSize.Height);
+                        statusBar.Draw(map);
+                    }
+                    else
+                        { frozen = true; }
                     break;
-                case State.idle:
-                    drawMenuScreen();
+                case State.win:
+                    timerGame.Enabled = false;
+                    MessageBox.Show("You won!");
+                    initializeScreen(Screen.Menu);
                     break;
-                // win & loss scenarios
+                // loss scenario
                 default:
                     break;
             }
+            size = this.Size;
             coords = this.Location;
+        }
+
+        private void timerMenu_Tick(object sender, EventArgs e)
+        {
+            drawMenuScreen();
         }
 
         private void bMenu_Click(object sender, EventArgs e)
         {
-            eraseScreen();
-            map.state = State.idle;
             initializeScreen(Screen.Menu);
         }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Up)
+            {
+                keyPressed = KeyPressed.up;
+                return true;
+            }
+            if (keyData == Keys.Down)
+            {
+                keyPressed = KeyPressed.down;
+                return true;
+            }
+            if (keyData == Keys.Left)
+            {
+                keyPressed = KeyPressed.left;
+                return true;
+            }
+            if (keyData == Keys.Right)
+            {
+                keyPressed = KeyPressed.right;
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        {
+            keyPressed = KeyPressed.none;
+        }
+
     }
 }

@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 
 namespace Pacman
 {
+    public enum KeyPressed { none, left, up, right, down };
+
+    public enum Direction {  left, up, right, down };
+
     class Pacman
     {
-        public Map map;
+        private Map map;
         public int x;
         public int y;
-        public int smer;
         public bool opened; // altering between two icons
+        public Direction direction = Direction.left;
 
         public Pacman(Map map, int x, int y)
         {
@@ -17,11 +22,77 @@ namespace Pacman
             this.x = x;
             this.y = y;
         }
+
+        private (int, int) TargetCoords(Direction direction)
+        {
+            // returns (x, y) of the field that is 'direction' of pacman
+            int target_x = x;
+            int target_y = y;
+            switch (direction)
+            {
+                case Direction.left:
+                    target_x--;
+                    break;
+                case Direction.up:
+                    target_y--;
+                    break;
+                case Direction.right:
+                    target_x++;
+                    break;
+                case Direction.down:
+                    target_y++;
+                    break;
+                default:
+                    break;
+            }
+            return (target_x, target_y);
+        }
+        
+        private bool IsFreeSpace(Direction direction)
+        {
+            var coords = TargetCoords(direction);
+            return map.IsFreeSpace(coords.Item1, coords.Item2);
+        }
+
+        public void Turn(KeyPressed key)
+        {
+            switch (key)
+            {
+                case KeyPressed.left:
+                    if (IsFreeSpace(Direction.left))
+                        { this.direction = Direction.left; }
+                    break;
+                case KeyPressed.up:
+                    if (IsFreeSpace(Direction.up))
+                        { this.direction = Direction.up; }
+                    break;
+                case KeyPressed.right:
+                    if (IsFreeSpace(Direction.right))
+                        { this.direction = Direction.right; }
+                    break;
+                case KeyPressed.down:
+                    if (IsFreeSpace(Direction.down))
+                        { this.direction = Direction.down; }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Move()
+        {
+            (int, int) new_coords = TargetCoords(direction);
+
+            if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
+            {
+                map.Move(x, y, new_coords.Item1, new_coords.Item2);
+            }
+        }
     }
 
     class StatusBar
     {
-        public int coinsLeft;
+        public int coinsLeft = 0;
         public int livesLeft;
         public int score;
         public int width;
@@ -64,7 +135,7 @@ namespace Pacman
         }
     }
 
-    public enum State { idle, running };
+    public enum State { running, win, loss };
 
     class Map
     {
@@ -74,7 +145,7 @@ namespace Pacman
         public int startx;
         public int starty;
 
-        public State state = State.idle;
+        public State state = State.running;
 
         Bitmap[] icons;
         public int sx;
@@ -94,8 +165,14 @@ namespace Pacman
                 height * sx + 2 * (statusbar.height + padding) );
         }
 
+        public bool IsFreeSpace(int x, int y)
+        {
+            return plan[x, y] != 'X';
+        }
+
         public void Draw(Graphics g, int windowWidth, int windowHeight)
         {
+            pacman.opened = !pacman.opened;
             int midx = windowWidth / 2;
             int midy = windowHeight / 2;
             startx = midx - width * sx / 2;
@@ -106,7 +183,17 @@ namespace Pacman
                 for (int y = 0; y < height; y++)
                 {
                     char c = plan[x, y];
-                    int indexObrazku = " X.$P".IndexOf(c);
+                    int indexObrazku = 0;
+                    if (c == 'P')
+                    {
+                        // the icons are in the same order as enum Direction
+                        // there are twice as many (opened and closed) and they start on index 4
+                        if (pacman.opened)
+                            { indexObrazku++; }
+                        indexObrazku += 4 + 2 * (int)pacman.direction;
+                    }
+                    else 
+                        { indexObrazku = " X.$".IndexOf(c); }
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
             }
@@ -134,7 +221,6 @@ namespace Pacman
             height = int.Parse(sr.ReadLine());
             plan = new char[width, height];
 
-            int coins_count = 0;
             for (int y = 0; y < height; y++)
             {
                 string line = sr.ReadLine();
@@ -151,7 +237,7 @@ namespace Pacman
 
                         case '.':
                         case '$':
-                            coins_count++;
+                            statusbar.coinsLeft++;
                             break;
                         default:
                             break;
@@ -159,8 +245,32 @@ namespace Pacman
                 }
             }
             sr.Close();
-            statusbar.coinsLeft = coins_count;
             statusbar.width = width * sx;
+        }
+
+        public void Move(int from_x, int from_y, int to_x, int to_y)
+        {
+            // First version: we suppose we're moving Pacman
+
+            char to = plan[to_x, to_y];
+            // TODO: if it's a ghost moving, a coin must reveal itself
+            // if there is a ghost, the game ends
+            if (to == '.' || to == '$')
+            {
+                statusbar.coinsLeft--;
+                statusbar.score++;
+                if (statusbar.coinsLeft == 0)
+                    { state = State.win; }
+            }
+            plan[to_x, to_y] = 'P';
+            plan[from_x, from_y] = ' ';
+            pacman.x = to_x;
+            pacman.y = to_y;
+        }
+        public void MoveObjects(KeyPressed key)
+        {
+            pacman.Turn(key);
+            pacman.Move();
         }
     }
 }

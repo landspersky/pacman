@@ -34,10 +34,11 @@
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
             this.bSettings = new System.Windows.Forms.Button();
-            this.timer = new System.Windows.Forms.Timer(this.components);
+            this.timerGame = new System.Windows.Forms.Timer(this.components);
             this.lLives = new System.Windows.Forms.Label();
             this.lScore = new System.Windows.Forms.Label();
             this.bMenu = new System.Windows.Forms.Button();
+            this.timerMenu = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // bPlay
@@ -83,9 +84,9 @@
             this.bSettings.TabIndex = 5;
             this.bSettings.UseVisualStyleBackColor = true;
             // 
-            // timer
+            // timerGame
             // 
-            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            this.timerGame.Tick += new System.EventHandler(this.timerGame_Tick);
             // 
             // lLives
             // 
@@ -118,6 +119,11 @@
             this.bMenu.UseVisualStyleBackColor = true;
             this.bMenu.Click += new System.EventHandler(this.bMenu_Click);
             // 
+            // timerMenu
+            // 
+            this.timerMenu.Enabled = true;
+            this.timerMenu.Tick += new System.EventHandler(this.timerMenu_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -144,9 +150,10 @@
         private Label lTitle;
         private Label lAuthor;
         private Button bSettings;
-        private System.Windows.Forms.Timer timer;
+        private System.Windows.Forms.Timer timerGame;
         private Label lLives;
         private Label lScore;
         private Button bMenu;
+        private System.Windows.Forms.Timer timerMenu;
     }
 }
