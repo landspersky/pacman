@@ -26,8 +26,7 @@ namespace Pacman
         public int score;
         public int width;
         public int height = 30;
-        public int startx;
-        public int starty;
+
         private Label lLives;
         private Label lScore;
         private Button bMenu;
@@ -39,15 +38,19 @@ namespace Pacman
             this.bMenu = bMenu;
         }
 
-        public void Draw()
+        public void Draw(Map map)
         {
+            int startx = map.startx;
+            int starty = map.starty - height;
+            int width = map.width * map.sx; // width is in pixels
             int midy = starty + height / 2;
             int midx = startx + width / 2;
+            int padding = 10;
 
             // Lives
             lLives.Text = $"Lives: {livesLeft}";
-            lLives.Left = startx + 10;
-            lLives.Top = starty + 10;
+            lLives.Left = startx + padding;
+            lLives.Top = starty + padding;
 
             // Score
             lScore.Text = $"{score}";
@@ -55,8 +58,8 @@ namespace Pacman
             lScore.Top = midy - lScore.Height / 2;
 
             // Menu
-            bMenu.Top = starty + 10;
-            bMenu.Left = startx + width - 10 - bMenu.Width / 2;
+            bMenu.Top = map.starty - padding - bMenu.Height;
+            bMenu.Left = startx + width - 10 - bMenu.Width;
 
         }
     }
@@ -66,23 +69,24 @@ namespace Pacman
     class Map
     {
         private char[,] plan;
-        int width;
-        int height;
-        int padding = 10;
+        public int width;
+        public int height;
+        public int startx;
+        public int starty;
 
         public State state = State.idle;
 
         Bitmap[] icons;
-        int sx;
+        public int sx;
 
         public Pacman pacman;
         public StatusBar statusbar;
         // other atributes
 
-        public Map(Form form, string mapPath, string iconsPath, StatusBar statusBar)
+        public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
         {
             this.statusbar = statusBar;
-
+            int padding = 10;
             form.MinimumSize = new Size(width * sx + 2 * padding,
                 height * sx + statusbar.height + 2 * padding);
             LoadIcons(iconsPath);
@@ -95,8 +99,8 @@ namespace Pacman
         {
             int midx = windowWidth / 2;
             int midy = windowHeight / 2;
-            int startx = midx - width * sx / 2;
-            int starty = midy - height * sx / 2;
+            startx = midx - width * sx / 2;
+            starty = midy - height * sx / 2;
 
             for (int x = 0; x < width; x++)
             {
@@ -107,9 +111,6 @@ namespace Pacman
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
             }
-
-            statusbar.startx = startx;
-            statusbar.starty = starty - statusbar.height;
         }
 
         public void LoadIcons(string path)

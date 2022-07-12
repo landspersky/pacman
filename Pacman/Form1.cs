@@ -35,7 +35,7 @@ namespace Pacman
             {
                 case State.running:
                     map.Draw(g, ClientSize.Width, ClientSize.Height);
-                    statusBar.Draw();
+                    statusBar.Draw(map);
                     break;
                 // win & loss scenarios
                 default:
