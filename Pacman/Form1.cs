@@ -84,7 +84,7 @@ namespace Pacman
                     timer.Enabled = false;
                     this.SuspendLayout();
                     if (this.Location != coords)
-                        { eraseScreen(); }s
+                        { eraseScreen(); }
                     map.Draw(g, ClientSize.Width, ClientSize.Height);
                     statusBar.Draw(map);
                     this.ResumeLayout();
