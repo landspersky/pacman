@@ -194,13 +194,13 @@ namespace Pacman
                     if (c == 'P')
                     {
                         // the icons are in the same order as enum Direction
-                        // there are twice as many (opened and closed) and they start on index 4
+                        // there are twice as many (opened and closed) and they start on index 8
                         if (pacman.opened)
                             { indexObrazku++; }
-                        indexObrazku += 4 + 2 * (int)pacman.direction;
+                        indexObrazku += 8 + 2 * (int)pacman.direction;
                     }
                     else 
-                        { indexObrazku = " X.$".IndexOf(c); }
+                        { indexObrazku = " X.$rpbo".IndexOf(c); }
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
             }
