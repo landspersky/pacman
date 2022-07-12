@@ -9,7 +9,7 @@ namespace Pacman
             InitializeComponent();
             initializeScreen(Screen.Menu);
 
-            timer.Enabled = true;
+            timerMenu.Enabled = true;
         }
 
         private void initializeScreen(Screen screen)
@@ -68,15 +68,17 @@ namespace Pacman
 
         private void bPlay_Click(object sender, EventArgs e)
         {
+            timerMenu.Enabled = false;
             g = CreateGraphics();
             this.statusBar = new StatusBar(lLives, lScore, bMenu);
             map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
                 @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
             map.state = State.running;
             initializeScreen(Screen.Game);
+            timerGame.Enabled = true;
         }
 
-        private void timer_Tick(object sender, EventArgs e)
+        private void timerGame_Tick(object sender, EventArgs e)
         {
             switch (map.state)
             {
@@ -92,9 +94,6 @@ namespace Pacman
                         statusBar.Draw(map);
                     }
                     break;
-                case State.idle:
-                    drawMenuScreen();
-                    break;
                 // win & loss scenarios
                 default:
                     break;
@@ -102,11 +101,18 @@ namespace Pacman
             coords = this.Location;
         }
 
+        private void timerMenu_Tick(object sender, EventArgs e)
+        {
+            drawMenuScreen();
+        }
+
         private void bMenu_Click(object sender, EventArgs e)
         {
+            timerGame.Enabled = false;
             eraseScreen();
             map.state = State.idle;
             initializeScreen(Screen.Menu);
+            timerMenu.Enabled = true;
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -138,5 +144,6 @@ namespace Pacman
         {
             keyPressed = KeyPressed.none;
         }
+
     }
 }
