@@ -9,10 +9,6 @@ namespace Pacman
             InitializeComponent();
             initializeScreen(Screen.Menu);
 
-            // we need map for timer
-            this.statusBar = new StatusBar(lLives, lScore, bMenu);
-            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
             timer.Enabled = true;
         }
 
@@ -73,6 +69,9 @@ namespace Pacman
         private void bPlay_Click(object sender, EventArgs e)
         {
             g = CreateGraphics();
+            this.statusBar = new StatusBar(lLives, lScore, bMenu);
+            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
+                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
             map.state = State.running;
             initializeScreen(Screen.Game);
         }
