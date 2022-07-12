@@ -86,13 +86,12 @@ namespace Pacman
         public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
         {
             this.statusbar = statusBar;
-            int padding = 10;
-            form.MinimumSize = new Size(width * sx + 2 * padding,
-                height * sx + statusbar.height + 2 * padding);
             LoadIcons(iconsPath);
             LoadMap(mapPath);
-            state = State.running;
 
+            int padding = 10;
+            form.MinimumSize = new Size(width * sx + 2 * padding,
+                height * sx + 2 * (statusbar.height + padding) );
         }
 
         public void Draw(Graphics g, int windowWidth, int windowHeight)

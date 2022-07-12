@@ -8,6 +8,14 @@ namespace Pacman
         {
             InitializeComponent();
             initializeScreen(Screen.Menu);
+
+            Size mnm = this.MinimumSize;
+            // we need map for timer
+            this.statusBar = new StatusBar(lLives, lScore, bMenu);
+            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
+                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
+            mnm = this.MinimumSize;
+            timer.Enabled = true;
         }
 
         public void initializeScreen(Screen screen)
@@ -27,10 +35,27 @@ namespace Pacman
             lAuthor.Visible = !toGame;
             lTitle.Visible = !toGame;
 
-            timer.Enabled = toGame;
             lLives.Visible = toGame;
             lScore.Visible = toGame;
             bMenu.Visible = toGame;
+        }
+
+        public void drawMenuScreen()
+        {
+            int midx = ClientSize.Width / 2;
+            int padding = 10;
+
+            lTitle.Left = midx - lTitle.Width / 2;
+            lTitle.Top = ClientSize.Height / 3 - lTitle.Height / 2;
+
+            lAuthor.Left = midx;
+            lAuthor.Top = lTitle.Top + lTitle.Height + padding;
+
+            bPlay.Left = midx - bPlay.Width / 2;
+            bPlay.Top = ClientSize.Height * 3 / 5;
+
+            bSettings.Left = ClientSize.Width - bSettings.Width - padding;
+            bSettings.Top = padding;
         }
 
         Map map;
@@ -40,10 +65,7 @@ namespace Pacman
         private void bPlay_Click(object sender, EventArgs e)
         {
             g = CreateGraphics();
-            this.statusBar = new StatusBar(lLives, lScore, bMenu);
-            map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt", 
-                @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
-
+            map.state = State.running;
             initializeScreen(Screen.Game);
         }
 
@@ -54,6 +76,9 @@ namespace Pacman
                 case State.running:
                     map.Draw(g, ClientSize.Width, ClientSize.Height);
                     statusBar.Draw(map);
+                    break;
+                case State.idle:
+                    drawMenuScreen();
                     break;
                 // win & loss scenarios
                 default:
@@ -68,6 +93,7 @@ namespace Pacman
             Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
             g.FillRectangle(blackBrush, rect);
 
+            map.state = State.idle;
             initializeScreen(Screen.Menu);
         }
     }
