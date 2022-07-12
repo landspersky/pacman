@@ -9,9 +9,12 @@ namespace Pacman
         StatusBar statusBar;
         Point coords;
         KeyPressed keyPressed;
+        Size size;
+        bool frozen;
 
         public Form1()
         {
+            size = this.Size;
             g = CreateGraphics();
             InitializeComponent();
             initializeScreen(Screen.Menu);
@@ -78,6 +81,7 @@ namespace Pacman
             g.FillRectangle(blackBrush, rect);
         }
 
+
         private void bPlay_Click(object sender, EventArgs e)
         {
             initializeScreen(Screen.Game);
@@ -88,13 +92,21 @@ namespace Pacman
             switch (map.state)
             {
                 case State.running:
-                    map.MoveObjects(keyPressed);
-
-                    //eraseScreen();
-
-                    map.Draw(g, ClientSize.Width, ClientSize.Height);
-                    statusBar.Draw(map);
-
+                    // if the user is changing window size, we don't draw anything
+                    // after adjustment, we need to wipe the screen
+                    if (size == this.Size)
+                    {
+                        if (frozen)
+                        {
+                            eraseScreen();
+                            frozen = false;
+                        }
+                        map.MoveObjects(keyPressed);
+                        map.Draw(g, ClientSize.Width, ClientSize.Height);
+                        statusBar.Draw(map);
+                    }
+                    else
+                        { frozen = true; }
                     break;
                 case State.win:
                     timerGame.Enabled = false;
@@ -105,6 +117,7 @@ namespace Pacman
                 default:
                     break;
             }
+            size = this.Size;
             coords = this.Location;
         }
 
