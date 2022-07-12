@@ -25,7 +25,7 @@ namespace Pacman
         public int livesLeft;
         public int score;
         public int width;
-        public int height = 30;
+        public int height = 50;
 
         private Label lLives;
         private Label lScore;
@@ -43,14 +43,14 @@ namespace Pacman
             int startx = map.startx;
             int starty = map.starty - height;
             int width = map.width * map.sx; // width is in pixels
-            int midy = starty + height / 2;
             int midx = startx + width / 2;
+            int midy = starty + height / 2;
             int padding = 10;
 
             // Lives
             lLives.Text = $"Lives: {livesLeft}";
             lLives.Left = startx + padding;
-            lLives.Top = starty + padding;
+            lLives.Top = midy - lLives.Height / 2;
 
             // Score
             lScore.Text = $"{score}";
@@ -58,8 +58,8 @@ namespace Pacman
             lScore.Top = midy - lScore.Height / 2;
 
             // Menu
-            bMenu.Top = map.starty - padding - bMenu.Height;
-            bMenu.Left = startx + width - 10 - bMenu.Width;
+            bMenu.Left = startx + width - padding - bMenu.Width;
+            bMenu.Top = midy - bMenu.Height / 2;
 
         }
     }
