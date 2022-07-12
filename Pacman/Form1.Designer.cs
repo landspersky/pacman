@@ -116,6 +116,7 @@
             this.bMenu.TabIndex = 8;
             this.bMenu.Text = "Menu";
             this.bMenu.UseVisualStyleBackColor = true;
+            this.bMenu.Click += new System.EventHandler(this.bMenu_Click);
             // 
             // Form1
             // 
