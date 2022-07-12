@@ -131,6 +131,7 @@
             this.Controls.Add(this.lAuthor);
             this.Controls.Add(this.lTitle);
             this.Controls.Add(this.bPlay);
+            this.DoubleBuffered = true;
             this.Name = "Form1";
             this.Text = "PACMAN";
             this.ResumeLayout(false);

@@ -9,16 +9,14 @@ namespace Pacman
             InitializeComponent();
             initializeScreen(Screen.Menu);
 
-            Size mnm = this.MinimumSize;
             // we need map for timer
             this.statusBar = new StatusBar(lLives, lScore, bMenu);
             map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
                 @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
-            mnm = this.MinimumSize;
             timer.Enabled = true;
         }
 
-        public void initializeScreen(Screen screen)
+        private void initializeScreen(Screen screen)
         {
             bool toGame;
             switch (screen)
@@ -40,7 +38,7 @@ namespace Pacman
             bMenu.Visible = toGame;
         }
 
-        public void drawMenuScreen()
+        private void drawMenuScreen()
         {
             int midx = ClientSize.Width / 2;
             int padding = 10;
@@ -58,9 +56,18 @@ namespace Pacman
             bSettings.Top = padding;
         }
 
+        private void eraseScreen()
+        {
+            // Make the screen black
+            SolidBrush blackBrush = new SolidBrush(Color.Black);
+            Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
+            g.FillRectangle(blackBrush, rect);
+        }
+
         Map map;
         Graphics g;
         StatusBar statusBar;
+        Point coords;
 
         private void bPlay_Click(object sender, EventArgs e)
         {
@@ -74,8 +81,14 @@ namespace Pacman
             switch (map.state)
             {
                 case State.running:
+                    timer.Enabled = false;
+                    this.SuspendLayout();
+                    if (this.Location != coords)
+                        { eraseScreen(); }s
                     map.Draw(g, ClientSize.Width, ClientSize.Height);
                     statusBar.Draw(map);
+                    this.ResumeLayout();
+                    timer.Enabled = true;
                     break;
                 case State.idle:
                     drawMenuScreen();
@@ -84,15 +97,12 @@ namespace Pacman
                 default:
                     break;
             }
+            coords = this.Location;
         }
 
         private void bMenu_Click(object sender, EventArgs e)
         {
-            // Make the window black
-            SolidBrush blackBrush = new SolidBrush(Color.Black);
-            Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
-            g.FillRectangle(blackBrush, rect);
-
+            eraseScreen();
             map.state = State.idle;
             initializeScreen(Screen.Menu);
         }
