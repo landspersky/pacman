@@ -12,8 +12,8 @@ namespace Pacman
         private Map map;
         public int x;
         public int y;
-        private bool opened; // altering between two icons
-        private Direction direction = Direction.left;
+        public bool opened; // altering between two icons
+        public Direction direction = Direction.left;
 
         public Pacman(Map map, int x, int y)
         {
@@ -181,7 +181,17 @@ namespace Pacman
                 for (int y = 0; y < height; y++)
                 {
                     char c = plan[x, y];
-                    int indexObrazku = " X.$P".IndexOf(c);
+                    int indexObrazku = 0;
+                    if (c == 'P')
+                    {
+                        // the icons are in the same order as enum Direction
+                        // there are twice as many (opened and closed) and they start on index 4
+                        if (pacman.opened)
+                            { indexObrazku++; }
+                        indexObrazku += 4 + 2 * (int)pacman.direction;
+                    }
+                    else 
+                        { indexObrazku = " X.$".IndexOf(c); }
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
             }
