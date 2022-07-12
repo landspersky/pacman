@@ -64,11 +64,12 @@ namespace Pacman
         Graphics g;
         StatusBar statusBar;
         Point coords;
-        KeyPressed keyPressed = KeyPressed.none;
+        KeyPressed keyPressed;
 
         private void bPlay_Click(object sender, EventArgs e)
         {
             timerMenu.Enabled = false;
+            keyPressed = KeyPressed.none;
             g = CreateGraphics();
             this.statusBar = new StatusBar(lLives, lScore, bMenu);
             map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
