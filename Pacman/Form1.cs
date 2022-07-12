@@ -81,14 +81,12 @@ namespace Pacman
             switch (map.state)
             {
                 case State.running:
-                    timer.Enabled = false;
                     this.SuspendLayout();
                     if (this.Location != coords)
                         { eraseScreen(); }
                     map.Draw(g, ClientSize.Width, ClientSize.Height);
                     statusBar.Draw(map);
                     this.ResumeLayout();
-                    timer.Enabled = true;
                     break;
                 case State.idle:
                     drawMenuScreen();
