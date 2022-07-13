@@ -24,40 +24,52 @@ namespace Pacman
             this.y = y;
         }
 
-        protected (int, int) TargetCoords(Direction direction)
+        protected (int, int) TargetCoords(Direction direction, int from_x, int from_y)
         {
-            // returns (x, y) of the field that is 'direction' of pacman
+            // returns (x, y) of the field that is 'direction' of (from_x, from_y)
             int target_x = this.x;
             int target_y = this.y;
             switch (direction)
             {
                 case Direction.left:
-                    target_x--;
+                    from_x--;
                     break;
                 case Direction.up:
-                    target_y--;
+                    from_y--;
                     break;
                 case Direction.right:
-                    target_x++;
+                    from_x++;
                     break;
                 case Direction.down:
-                    target_y++;
+                    from_y++;
                     break;
                 default:
                     break;
             }
-            return (target_x, target_y);
+            return (from_x, from_y);
+        }
+
+        protected (int, int) TargetCoords(Direction direction)
+        {
+            // return (x, y) of field 'direction' of character
+            return TargetCoords(direction, x, y);
+        }
+
+        protected bool IsFreeSpace(Direction direction, int from_x, int from_y)
+        {
+            var coords = TargetCoords(direction, from_x, from_y);
+            return map.IsFreeSpace(coords);
         }
 
         protected bool IsFreeSpace(Direction direction)
         {
-            var coords = TargetCoords(direction);
-            return map.IsFreeSpace(coords.Item1, coords.Item2);
+            return IsFreeSpace(direction, x, y);
         }
     }
     abstract class Ghost : Character
     {
         public char id;
+        public Pacman pacman;
         protected Ghost(Map map, int x, int y) : base(map, x, y)
         {
         }
@@ -68,19 +80,19 @@ namespace Pacman
             q.Enqueue((x, y));
             Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
 
-            int original_x = x;
-            int original_y = y;
+            //int original_x = x;
+            //int original_y = y;
             (int, int) current = (0, 0);
 
             while (! firstParent.ContainsKey((to_x, to_y)))
             {
                 current = q.Dequeue();
-                x = current.Item1;
-                y = current.Item2;
+                //x = current.Item1;
+                //y = current.Item2;
                 foreach (Direction d in Enum.GetValues(typeof(Direction)))
                 {
-                    (int, int) neighbour = TargetCoords(d);
-                    if (! firstParent.ContainsKey(neighbour) && IsFreeSpace(d))
+                    (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
+                    if (! firstParent.ContainsKey(neighbour) && map.IsFreeSpace(neighbour))
                     {
                         q.Enqueue(neighbour);
                         if (firstParent.ContainsKey(current))
@@ -90,8 +102,8 @@ namespace Pacman
                     }
                 }
             }
-            x = original_x;
-            y = original_y;
+            //x = original_x;
+            //y = original_y;
             return firstParent[(to_x, to_y)];
         }
     }
@@ -101,35 +113,28 @@ namespace Pacman
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'r';
+            slowness = 4;
+        }
+
+        public override void Move()
+        {
+            (int, int) to = NextOnShortest(pacman.x, pacman.y);
+            x = to.Item1;
+            y = to.Item2;
+        }
+    }
+
+    class PinkGhost : Ghost
+    {
+        public PinkGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'p';
             slowness = 3;
         }
 
-        private bool left;
-        // placeholder Move function
         public override void Move()
         {
-            /*
-            if (left)
-            {
-                (int, int) L = TargetCoords(Direction.left);
-                x = L.Item1;
-                y = L.Item2;
-                if (! IsFreeSpace(Direction.left))
-                    { left = false; }
-
-            }
-            else
-            {
-                (int, int) R = TargetCoords(Direction.right);
-                x = R.Item1;
-                y = R.Item2;
-                if (! IsFreeSpace(Direction.right))
-                    { left = true; }
-            }
-            */
-            (int, int) to = NextOnShortest(map.pacman.x, map.pacman.y);
-            x = to.Item1;
-            y = to.Item2;
+            
         }
     }
     class Pacman : Character
@@ -171,7 +176,7 @@ namespace Pacman
         {
             (int, int) new_coords = TargetCoords(direction);
 
-            if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
+            if (map.IsFreeSpace(new_coords))
             {
                 map.MovePacman(x, y, new_coords.Item1, new_coords.Item2);
             }
@@ -254,9 +259,9 @@ namespace Pacman
                 height * sx + 2 * (statusbar.height + padding) );
         }
 
-        public bool IsFreeSpace(int x, int y)
+        public bool IsFreeSpace((int, int) coords)
         {
-            return plan[x, y] != 'X';
+            return plan[coords.Item1, coords.Item2] != 'X';
         }
 
         public void Draw(Graphics g, int windowWidth, int windowHeight)
@@ -346,6 +351,8 @@ namespace Pacman
                 }
             }
             sr.Close();
+            foreach (Ghost gh in ghosts)
+                { gh.pacman = pacman; }
             statusbar.width = width * sx;
         }
 
