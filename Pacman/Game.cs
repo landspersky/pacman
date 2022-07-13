@@ -164,6 +164,50 @@ namespace Pacman
             y = to.Item2;
         }
     }
+
+    class OrangeGhost : Ghost
+    {
+        public OrangeGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'o';
+            slowness = 2;
+            corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
+                (map.width - 2, map.height - 2), (1, map.height - 2) };
+        }
+
+        private (int, int)[] corners;
+        private bool bloodthirsty = false;
+        private int cornerIndex = 0;
+        private int steps = 0;
+
+        public override void Move()
+        {
+            // chases after pacman unless too close, then goes to corner for a while
+
+            // Euclidean distance = \sqrt{ |o.x - p.x|^2 + |o.y - p.y|^2 }
+            double distance = Math.Sqrt(Math.Pow(Math.Abs(x - pacman.x), 2) + 
+                Math.Pow(Math.Abs(y - pacman.y), 2));
+            if (distance < 5)
+                { bloodthirsty = false; }
+            if ( (x,y) == corners[cornerIndex] || steps == 10)
+            {
+                bloodthirsty = true;
+                cornerIndex = (cornerIndex + 1) % 4;
+                steps = 0;
+            }
+            (int, int) to;
+            if (bloodthirsty)
+                { to = NextOnShortest(pacman.x, pacman.y); }
+            else
+            { 
+                to = NextOnShortest(corners[cornerIndex].Item1, corners[cornerIndex].Item2);
+                steps++;
+            }
+            x = to.Item1;
+            y = to.Item2;
+        }
+    }
+
     class Pacman : Character
     {
         public bool opened; // altering between two icons
@@ -377,6 +421,11 @@ namespace Pacman
                             ghosts.Add(pink);
                             plan[x, y] = ' ';
                             break;
+                        case 'o':
+                            OrangeGhost orange = new OrangeGhost(this, x, y);
+                            ghosts.Add(orange);
+                            plan[x, y] = ' ';
+                            break;
                         default:
                             break;
                     }
@@ -384,7 +433,9 @@ namespace Pacman
             }
             sr.Close();
             foreach (Ghost gh in ghosts)
-                { gh.pacman = pacman; }
+            { 
+                gh.pacman = pacman;
+            }
             statusbar.width = width * sx;
         }
 
