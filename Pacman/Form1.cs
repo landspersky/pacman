@@ -9,6 +9,7 @@ namespace Pacman
         KeyPressed keyPressed;
         Size size;
         bool frozen;
+        private int tickCounter = 0;
         private BufferedGraphicsContext context;
         private BufferedGraphics grafx;
 
@@ -54,6 +55,7 @@ namespace Pacman
                     toGame = false;
                     break;
             }
+            tickCounter = 0;
             keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
             bSettings.Visible = !toGame;
@@ -111,7 +113,8 @@ namespace Pacman
                             eraseScreen();
                             frozen = false;
                         }
-                        map.MoveObjects(keyPressed);
+                        tickCounter++;
+                        map.MoveObjects(keyPressed, tickCounter);
                         map.Draw(grafx.Graphics, ClientSize.Width, ClientSize.Height);
                         Refresh();
                         statusBar.Draw(map);

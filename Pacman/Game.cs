@@ -12,6 +12,7 @@ namespace Pacman
     abstract class Character
     {
         protected Map map;
+        public int slowness; // period of movement in ticks
         public int x;
         public int y;
         public abstract void Move();
@@ -100,6 +101,7 @@ namespace Pacman
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'r';
+            slowness = 3;
         }
 
         private bool left;
@@ -137,6 +139,7 @@ namespace Pacman
 
         public Pacman(Map map, int x, int y) : base(map, x, y)
         {
+            slowness = 2;
         }
 
         public void Turn(KeyPressed key)
@@ -370,10 +373,13 @@ namespace Pacman
             }
         }
 
-        public void MoveObjects(KeyPressed key)
+        public void MoveObjects(KeyPressed key, int tickCounter)
         {
-            pacman.Turn(key);
-            pacman.Move();
+            if (tickCounter % pacman.slowness == 0)
+            {
+                pacman.Turn(key);
+                pacman.Move();
+            }
 
             foreach (Ghost gh in ghosts)
             {
@@ -383,7 +389,8 @@ namespace Pacman
                     { state = State.loss; }
                 else
                 {
-                    gh.Move();
+                    if (tickCounter % gh.slowness == 0)
+                        { gh.Move(); }
                     if (gh.x == pacman.x && gh.y == pacman.y)
                         { state = State.loss; }
                 }
