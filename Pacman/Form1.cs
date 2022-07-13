@@ -5,24 +5,35 @@ namespace Pacman
         public enum Screen { Menu, Game };
 
         Map map;
-        Graphics g;
         StatusBar statusBar;
         Point coords;
         KeyPressed keyPressed;
         Size size;
         bool frozen;
+        private BufferedGraphicsContext context;
+        private BufferedGraphics grafx;
 
         public Form1()
         {
             size = this.Size;
-            g = CreateGraphics();
             InitializeComponent();
+
+            context = BufferedGraphicsManager.Current;
+            context.MaximumBuffer = new Size(this.Width + 1, this.Height + 1);
+            grafx = context.Allocate(this.CreateGraphics(),
+                new Rectangle(0, 0, this.Width, this.Height));
+
             initializeScreen(Screen.Menu);
+        }
+
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            grafx.Render(e.Graphics);
         }
 
         private void initializeScreen(Screen screen)
         {
-            g = CreateGraphics();
             bool toGame;
             switch (screen)
             {
@@ -78,9 +89,8 @@ namespace Pacman
             // Make the screen black
             SolidBrush blackBrush = new SolidBrush(Color.Black);
             Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
-            g.FillRectangle(blackBrush, rect);
+            grafx.Graphics.FillRectangle(blackBrush, rect);
         }
-
 
         private void bPlay_Click(object sender, EventArgs e)
         {
@@ -102,9 +112,8 @@ namespace Pacman
                             frozen = false;
                         }
                         map.MoveObjects(keyPressed);
-                        //Invalidate();
-                        map.Draw(g, ClientSize.Width, ClientSize.Height);
-                        Update();
+                        map.Draw(grafx.Graphics, ClientSize.Width, ClientSize.Height);
+                        Refresh();
                         statusBar.Draw(map);
                     }
                     else
