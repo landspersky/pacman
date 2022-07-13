@@ -86,7 +86,7 @@
             // 
             // timerGame
             // 
-            this.timerGame.Interval = 50;
+            this.timerGame.Interval = 30;
             this.timerGame.Tick += new System.EventHandler(this.timerGame_Tick);
             // 
             // lLives

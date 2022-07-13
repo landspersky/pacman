@@ -108,6 +108,17 @@ namespace Pacman
             }
             return firstParent[(to_x, to_y)];
         }
+
+        public double Distance(int x1, int y1, int x2, int y2)
+        {
+           return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2), 2) +
+                Math.Pow(Math.Abs(y1 - y2), 2));
+        }
+
+        public double Distance(int x1, int y1)
+        {
+            return Distance(x1, y1, x, y);
+        }
     }
 
     class RedGhost : Ghost
@@ -115,7 +126,7 @@ namespace Pacman
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'r';
-            slowness = 4;
+            slowness = 6;
         }
 
         public override void Move()
@@ -132,7 +143,7 @@ namespace Pacman
         public PinkGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'p';
-            slowness = 3;
+            slowness = 4;
         }
 
         Random generator = new Random();
@@ -173,7 +184,7 @@ namespace Pacman
         public OrangeGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'o';
-            slowness = 2;
+            slowness = 3;
             corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
                 (map.width - 2, map.height - 2), (1, map.height - 2) };
         }
@@ -188,8 +199,7 @@ namespace Pacman
             // chases after pacman unless too close, then goes to corner for a while
 
             // Euclidean distance = \sqrt{ |o.x - p.x|^2 + |o.y - p.y|^2 }
-            double distance = Math.Sqrt(Math.Pow(Math.Abs(x - pacman.x), 2) + 
-                Math.Pow(Math.Abs(y - pacman.y), 2));
+            double distance = Distance(pacman.x, pacman.y);
             if (distance < 5)
                 { bloodthirsty = false; }
             if ( (x,y) == corners[cornerIndex] || steps == 10)
@@ -218,7 +228,7 @@ namespace Pacman
 
         public Pacman(Map map, int x, int y) : base(map, x, y)
         {
-            slowness = 2;
+            slowness = 3;
         }
 
         public void Turn(KeyPressed key)
