@@ -132,7 +132,7 @@ namespace Pacman
 
             if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
             {
-                map.MovePac(x, y, new_coords.Item1, new_coords.Item2);
+                map.MovePacman(x, y, new_coords.Item1, new_coords.Item2);
             }
         }
     }
@@ -308,10 +308,9 @@ namespace Pacman
             statusbar.width = width * sx;
         }
 
-        public void MovePac(int from_x, int from_y, int to_x, int to_y)
+        public void MovePacman(int from_x, int from_y, int to_x, int to_y)
         {
             // we suppose the move is valid which is checked by other functions
-            // First version: we suppose we're moving Pacman
             char from = plan[from_x, from_y];
             char to = plan[to_x, to_y];
             if (to == '.' || to == '$')
@@ -325,15 +324,31 @@ namespace Pacman
             plan[from_x, from_y] = ' ';
             pacman.x = to_x;
             pacman.y = to_y;
+
+            foreach (Ghost gh in ghosts)
+            {
+                if (gh.x == to_x && gh.y == to_y)
+                    { state = State.loss; }
+            }
         }
+
         public void MoveObjects(KeyPressed key)
         {
             pacman.Turn(key);
             pacman.Move();
 
-            foreach (Ghost g in ghosts)
+            foreach (Ghost gh in ghosts)
             {
-                g.Move();
+                // have to check twice or they could cross and not be on same coords
+                // = the ghosts are smart and stay on the spot if needed
+                if (gh.x == pacman.x && gh.y == pacman.y)
+                    { state = State.loss; }
+                else
+                {
+                    gh.Move();
+                    if (gh.x == pacman.x && gh.y == pacman.y)
+                        { state = State.loss; }
+                }
             }
         }
     }

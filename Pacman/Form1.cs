@@ -90,6 +90,7 @@ namespace Pacman
             SolidBrush blackBrush = new SolidBrush(Color.Black);
             Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
             grafx.Graphics.FillRectangle(blackBrush, rect);
+            Refresh();
         }
 
         private void bPlay_Click(object sender, EventArgs e)
@@ -124,7 +125,11 @@ namespace Pacman
                     MessageBox.Show("You won!");
                     initializeScreen(Screen.Menu);
                     break;
-                // loss scenario
+                case State.loss:
+                    timerGame.Enabled = false;
+                    MessageBox.Show("You lost!");
+                    initializeScreen(Screen.Menu);
+                    break;
                 default:
                     break;
             }
