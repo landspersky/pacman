@@ -135,6 +135,7 @@ namespace Pacman
             slowness = 3;
         }
 
+        Random generator = new Random();
         private bool OutsideOfMap((int, int) coords)
         {
             // outside OR on the border
@@ -146,18 +147,20 @@ namespace Pacman
             // wants to get ahead of pacman
 
             // get coords of field two steps ahead of pacman
-            (int, int) temp = TargetCoords(pacman.direction, pacman.x, pacman.y);
-            temp = TargetCoords(pacman.direction, temp.Item1, temp.Item2);
+            Direction d = pacman.direction;
+            (int, int) temp = TargetCoords(d, pacman.x, pacman.y);
+            temp = TargetCoords(d, temp.Item1, temp.Item2);
 
             if (OutsideOfMap(temp))
-                { temp = (pacman.x, pacman.y); }
+            { 
+                // we look at the opposite direction (suppose the correct order of enum)
+                d = (Direction)(((int)d + 2) % 4);
+                temp = TargetCoords(d, pacman.x, pacman.y);
+                temp = TargetCoords(d, temp.Item1, temp.Item2);
+            }
 
             while (! map.IsFreeSpace(temp))
-            {
-                temp = TargetCoords(pacman.direction, temp.Item1, temp.Item2);
-                if (OutsideOfMap(temp))
-                    { temp = (pacman.x, pacman.y); }
-            }
+                { temp = TargetCoords(d, temp.Item1, temp.Item2); }
 
             (int, int) to = NextOnShortest(temp.Item1, temp.Item2);
             x = to.Item1;
