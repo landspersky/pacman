@@ -60,6 +60,39 @@ namespace Pacman
         protected Ghost(Map map, int x, int y) : base(map, x, y)
         {
         }
+        protected (int, int) NextOnShortest(int to_x, int to_y)
+        {
+            // returns the next location on the shortest path to (to_x, to_y)
+            Queue<(int, int)> q = new Queue<(int, int)>();
+            q.Enqueue((x, y));
+            Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
+
+            int original_x = x;
+            int original_y = y;
+            (int, int) current = (0, 0);
+
+            while (! firstParent.ContainsKey((to_x, to_y)))
+            {
+                current = q.Dequeue();
+                x = current.Item1;
+                y = current.Item2;
+                foreach (Direction d in Enum.GetValues(typeof(Direction)))
+                {
+                    (int, int) neighbour = TargetCoords(d);
+                    if (! firstParent.ContainsKey(neighbour) && IsFreeSpace(d))
+                    {
+                        q.Enqueue(neighbour);
+                        if (firstParent.ContainsKey(current))
+                            { firstParent[neighbour] = firstParent[current]; }
+                        else
+                            { firstParent[neighbour] = neighbour; }
+                    }
+                }
+            }
+            x = original_x;
+            y = original_y;
+            return firstParent[(to_x, to_y)];
+        }
     }
 
     class RedGhost : Ghost
@@ -73,6 +106,7 @@ namespace Pacman
         // placeholder Move function
         public override void Move()
         {
+            /*
             if (left)
             {
                 (int, int) L = TargetCoords(Direction.left);
@@ -90,6 +124,10 @@ namespace Pacman
                 if (! IsFreeSpace(Direction.right))
                     { left = true; }
             }
+            */
+            (int, int) to = NextOnShortest(map.pacman.x, map.pacman.y);
+            x = to.Item1;
+            y = to.Item2;
         }
     }
     class Pacman : Character
