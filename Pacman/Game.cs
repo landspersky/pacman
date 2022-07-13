@@ -56,6 +56,7 @@ namespace Pacman
     }
     abstract class Ghost : Character
     {
+        public char id;
         protected Ghost(Map map, int x, int y) : base(map, x, y)
         {
         }
@@ -65,30 +66,29 @@ namespace Pacman
     {
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
+            id = 'r';
         }
 
         private bool left;
         // placeholder Move function
         public override void Move()
         {
-           (int, int) L = TargetCoords(Direction.left);
-           (int, int) R = TargetCoords(Direction.right);
             if (left)
             {
-                map.Move(this, x, y, L.Item1, L.Item2);
+                (int, int) L = TargetCoords(Direction.left);
+                x = L.Item1;
+                y = L.Item2;
                 if (! IsFreeSpace(Direction.left))
-                {
-                    left = false;
-                }
+                    { left = false; }
 
             }
             else
             {
-                map.Move(this, x, y, R.Item1, R.Item2);
-                if (!IsFreeSpace(Direction.right))
-                {
-                    left = true;
-                }
+                (int, int) R = TargetCoords(Direction.right);
+                x = R.Item1;
+                y = R.Item2;
+                if (! IsFreeSpace(Direction.right))
+                    { left = true; }
             }
         }
     }
@@ -132,7 +132,7 @@ namespace Pacman
 
             if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
             {
-                map.Move(this, x, y, new_coords.Item1, new_coords.Item2);
+                map.MovePac(x, y, new_coords.Item1, new_coords.Item2);
             }
         }
     }
@@ -241,9 +241,15 @@ namespace Pacman
                         indexObrazku += 8 + 2 * (int)pacman.direction;
                     }
                     else 
-                        { indexObrazku = " X.$rpbo".IndexOf(c); }
+                        { indexObrazku = " X.$".IndexOf(c); }
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
+            }
+
+            foreach (Ghost gh in ghosts)
+            {
+                int indexObrazku = "rpbo".IndexOf(gh.id) + 4;
+                g.DrawImage(icons[indexObrazku], gh.x * sx + startx, gh.y * sx + starty);
             }
         }
 
@@ -283,14 +289,15 @@ namespace Pacman
                         case 'P':
                             this.pacman = new Pacman(this, x, y);
                             break;
-
                         case '.':
                         case '$':
                             statusbar.coinsLeft++;
                             break;
+                        // the ghosts are not in plan
                         case 'r':
                             RedGhost red = new RedGhost(this, x, y);
                             ghosts.Add(red);
+                            plan[x, y] = ' ';
                             break;
                         default:
                             break;
@@ -301,32 +308,23 @@ namespace Pacman
             statusbar.width = width * sx;
         }
 
-        public void Move(Character obj, int from_x, int from_y, int to_x, int to_y)
+        public void MovePac(int from_x, int from_y, int to_x, int to_y)
         {
             // we suppose the move is valid which is checked by other functions
             // First version: we suppose we're moving Pacman
             char from = plan[from_x, from_y];
             char to = plan[to_x, to_y];
-            if (obj == pacman)
+            if (to == '.' || to == '$')
             {
-                if (to == '.' || to == '$')
-                {
-                    statusbar.coinsLeft--;
-                    statusbar.score++;
-                    if (statusbar.coinsLeft == 0)
-                    { state = State.win; }
-                }
-                // if there is a ghost, the game ends
+                statusbar.coinsLeft--;
+                statusbar.score++;
+                if (statusbar.coinsLeft == 0)
+                { state = State.win; }
             }
-            else
-            {
-                Console.WriteLine("Hi");
-                // TODO: if it's a ghost moving, a coin must reveal itself
-            }
-            plan[to_x, to_y] = from;
+            plan[to_x, to_y] = 'P';
             plan[from_x, from_y] = ' ';
-            obj.x = to_x;
-            obj.y = to_y;
+            pacman.x = to_x;
+            pacman.y = to_y;
         }
         public void MoveObjects(KeyPressed key)
         {

@@ -102,7 +102,9 @@ namespace Pacman
                             frozen = false;
                         }
                         map.MoveObjects(keyPressed);
+                        //Invalidate();
                         map.Draw(g, ClientSize.Width, ClientSize.Height);
+                        Update();
                         statusBar.Draw(map);
                     }
                     else
