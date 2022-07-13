@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Pacman
 {
@@ -14,6 +15,13 @@ namespace Pacman
         public int x;
         public int y;
         public abstract void Move();
+
+        protected Character(Map map, int x, int y)
+        {
+            this.map = map;
+            this.x = x;
+            this.y = y;
+        }
 
         protected (int, int) TargetCoords(Direction direction)
         {
@@ -48,17 +56,49 @@ namespace Pacman
     }
     abstract class Ghost : Character
     {
+        protected Ghost(Map map, int x, int y) : base(map, x, y)
+        {
+        }
+    }
+
+    class RedGhost : Ghost
+    {
+        public RedGhost(Map map, int x, int y) : base(map, x, y)
+        {
+        }
+
+        private bool left;
+        // placeholder Move function
+        public override void Move()
+        {
+           (int, int) L = TargetCoords(Direction.left);
+           (int, int) R = TargetCoords(Direction.right);
+            if (left)
+            {
+                map.Move(this, x, y, L.Item1, L.Item2);
+                if (! IsFreeSpace(Direction.left))
+                {
+                    left = false;
+                }
+
+            }
+            else
+            {
+                map.Move(this, x, y, R.Item1, R.Item2);
+                if (!IsFreeSpace(Direction.right))
+                {
+                    left = true;
+                }
+            }
+        }
     }
     class Pacman : Character
     {
         public bool opened; // altering between two icons
         public Direction direction = Direction.left;
 
-        public Pacman(Map map, int x, int y)
+        public Pacman(Map map, int x, int y) : base(map, x, y)
         {
-            this.map = map;
-            this.x = x;
-            this.y = y;
         }
 
         public void Turn(KeyPressed key)
@@ -92,7 +132,7 @@ namespace Pacman
 
             if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
             {
-                map.Move(x, y, new_coords.Item1, new_coords.Item2);
+                map.Move(this, x, y, new_coords.Item1, new_coords.Item2);
             }
         }
     }
@@ -159,6 +199,7 @@ namespace Pacman
 
         public Pacman pacman;
         public StatusBar statusbar;
+        public List<Ghost> ghosts;
         // other atributes
 
         public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
@@ -223,6 +264,7 @@ namespace Pacman
 
         public void LoadMap(string path)
         {
+            ghosts = new List<Ghost>();
             StreamReader sr = new StreamReader(path);
             width = int.Parse(sr.ReadLine());
             height = int.Parse(sr.ReadLine());
@@ -233,10 +275,10 @@ namespace Pacman
                 string line = sr.ReadLine();
                 for (int x = 0; x < width; x++)
                 {
-                    char znak = line[x];
-                    plan[x, y] = znak;
+                    char sign = line[x];
+                    plan[x, y] = sign;
 
-                    switch (znak)
+                    switch (sign)
                     {
                         case 'P':
                             this.pacman = new Pacman(this, x, y);
@@ -245,6 +287,10 @@ namespace Pacman
                         case '.':
                         case '$':
                             statusbar.coinsLeft++;
+                            break;
+                        case 'r':
+                            RedGhost red = new RedGhost(this, x, y);
+                            ghosts.Add(red);
                             break;
                         default:
                             break;
@@ -255,29 +301,42 @@ namespace Pacman
             statusbar.width = width * sx;
         }
 
-        public void Move(int from_x, int from_y, int to_x, int to_y)
+        public void Move(Character obj, int from_x, int from_y, int to_x, int to_y)
         {
+            // we suppose the move is valid which is checked by other functions
             // First version: we suppose we're moving Pacman
-
+            char from = plan[from_x, from_y];
             char to = plan[to_x, to_y];
-            // TODO: if it's a ghost moving, a coin must reveal itself
-            // if there is a ghost, the game ends
-            if (to == '.' || to == '$')
+            if (obj == pacman)
             {
-                statusbar.coinsLeft--;
-                statusbar.score++;
-                if (statusbar.coinsLeft == 0)
+                if (to == '.' || to == '$')
+                {
+                    statusbar.coinsLeft--;
+                    statusbar.score++;
+                    if (statusbar.coinsLeft == 0)
                     { state = State.win; }
+                }
+                // if there is a ghost, the game ends
             }
-            plan[to_x, to_y] = 'P';
+            else
+            {
+                Console.WriteLine("Hi");
+                // TODO: if it's a ghost moving, a coin must reveal itself
+            }
+            plan[to_x, to_y] = from;
             plan[from_x, from_y] = ' ';
-            pacman.x = to_x;
-            pacman.y = to_y;
+            obj.x = to_x;
+            obj.y = to_y;
         }
         public void MoveObjects(KeyPressed key)
         {
             pacman.Turn(key);
             pacman.Move();
+
+            foreach (Ghost g in ghosts)
+            {
+                g.Move();
+            }
         }
     }
 }
