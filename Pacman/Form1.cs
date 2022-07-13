@@ -6,7 +6,6 @@ namespace Pacman
 
         Map map;
         StatusBar statusBar;
-        Point coords;
         KeyPressed keyPressed;
         Size size;
         bool frozen;
@@ -134,7 +133,6 @@ namespace Pacman
                     break;
             }
             size = this.Size;
-            coords = this.Location;
         }
 
         private void timerMenu_Tick(object sender, EventArgs e)
