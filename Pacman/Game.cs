@@ -70,25 +70,29 @@ namespace Pacman
     {
         public char id;
         public Pacman pacman;
+        private Random generator = new Random();
+
         protected Ghost(Map map, int x, int y) : base(map, x, y)
         {
         }
+
         protected (int, int) NextOnShortest(int to_x, int to_y)
         {
+            if ((x, y) == (to_x, to_y))
+                { return (x, y); }
             // returns the next location on the shortest path to (to_x, to_y)
             Queue<(int, int)> q = new Queue<(int, int)>();
             q.Enqueue((x, y));
             Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
 
-            //int original_x = x;
-            //int original_y = y;
             (int, int) current = (0, 0);
 
             while (! firstParent.ContainsKey((to_x, to_y)))
             {
+                // when the location is in inaccessible, eg ghost box
+                if (q.Count == 0)
+                    { return (x, y); }
                 current = q.Dequeue();
-                //x = current.Item1;
-                //y = current.Item2;
                 foreach (Direction d in Enum.GetValues(typeof(Direction)))
                 {
                     (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
@@ -102,8 +106,6 @@ namespace Pacman
                     }
                 }
             }
-            //x = original_x;
-            //y = original_y;
             return firstParent[(to_x, to_y)];
         }
     }
@@ -118,6 +120,7 @@ namespace Pacman
 
         public override void Move()
         {
+            // chases after pacman
             (int, int) to = NextOnShortest(pacman.x, pacman.y);
             x = to.Item1;
             y = to.Item2;
@@ -132,15 +135,39 @@ namespace Pacman
             slowness = 3;
         }
 
+        private bool OutsideOfMap((int, int) coords)
+        {
+            // outside OR on the border
+            return coords.Item1 < 1 || coords.Item1 > map.width - 2 || coords.Item2 < 1 || coords.Item2 > map.height - 2;
+        }
+
         public override void Move()
         {
-            
+            // wants to get ahead of pacman
+
+            // get coords of field two steps ahead of pacman
+            (int, int) temp = TargetCoords(pacman.direction, pacman.x, pacman.y);
+            temp = TargetCoords(pacman.direction, temp.Item1, temp.Item2);
+
+            if (OutsideOfMap(temp))
+                { temp = (pacman.x, pacman.y); }
+
+            while (! map.IsFreeSpace(temp))
+            {
+                temp = TargetCoords(pacman.direction, temp.Item1, temp.Item2);
+                if (OutsideOfMap(temp))
+                    { temp = (pacman.x, pacman.y); }
+            }
+
+            (int, int) to = NextOnShortest(temp.Item1, temp.Item2);
+            x = to.Item1;
+            y = to.Item2;
         }
     }
     class Pacman : Character
     {
         public bool opened; // altering between two icons
-        public Direction direction = Direction.left;
+        public Direction direction = Direction.right;
 
         public Pacman(Map map, int x, int y) : base(map, x, y)
         {
@@ -345,6 +372,11 @@ namespace Pacman
                             ghosts.Add(red);
                             plan[x, y] = ' ';
                             break;
+                        case 'p':
+                            PinkGhost pink = new PinkGhost(this, x, y);
+                            ghosts.Add(pink);
+                            plan[x, y] = ' ';
+                            break;
                         default:
                             break;
                     }
@@ -388,6 +420,7 @@ namespace Pacman
                 pacman.Move();
             }
 
+            Pacman var = pacman;
             foreach (Ghost gh in ghosts)
             {
                 // have to check twice or they could cross and not be on same coords
