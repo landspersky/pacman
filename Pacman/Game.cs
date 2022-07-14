@@ -27,8 +27,6 @@ namespace Pacman
         protected (int, int) TargetCoords(Direction direction, int from_x, int from_y)
         {
             // returns (x, y) of the field that is 'direction' of (from_x, from_y)
-            int target_x = this.x;
-            int target_y = this.y;
             switch (direction)
             {
                 case Direction.left:
@@ -78,14 +76,42 @@ namespace Pacman
 
         protected (int, int) NextOnShortest(int to_x, int to_y)
         {
+            // returns the next location on the shortest path to (to_x, to_y)
             if ((x, y) == (to_x, to_y))
                 { return (x, y); }
-            // returns the next location on the shortest path to (to_x, to_y)
+
             Queue<(int, int)> q = new Queue<(int, int)>();
             q.Enqueue((x, y));
             Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
+            (int, int) current = (to_x, to_y);
 
-            (int, int) current = (0, 0);
+            // finds the closest free spot
+            // allows us to find paths to spots with walls
+            if (! map.IsFreeSpace(current))
+            {
+                List<(int, int)> visited = new List<(int, int)>();
+                visited.Add(current);
+                while ( true )
+                {
+                    current = q.Dequeue();
+                    if (map.IsFreeSpace(current))
+                        { break; }
+                    foreach (Direction d in Enum.GetValues(typeof(Direction)))
+                    {
+                        (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
+                        if (!visited.Contains(neighbour) && !OutsideOfMap(neighbour))
+                        {
+                            q.Enqueue(neighbour);
+                            visited.Add(neighbour);
+                        }
+                    }
+                    
+                }
+                to_x = current.Item1;
+                to_y = current.Item2;
+                q.Clear();
+                q.Enqueue((x, y));
+            }
 
             while (! firstParent.ContainsKey((to_x, to_y)))
             {
@@ -96,7 +122,7 @@ namespace Pacman
                 foreach (Direction d in Enum.GetValues(typeof(Direction)))
                 {
                     (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
-                    if (! firstParent.ContainsKey(neighbour) && map.IsFreeSpace(neighbour))
+                    if (! firstParent.ContainsKey(neighbour) && map.IsFreeSpace(neighbour) && ! OutsideOfMap(neighbour))
                     {
                         q.Enqueue(neighbour);
                         if (firstParent.ContainsKey(current))
@@ -107,6 +133,12 @@ namespace Pacman
                 }
             }
             return firstParent[(to_x, to_y)];
+        }
+
+        protected bool OutsideOfMap((int, int) coords)
+        {
+            // outside OR on the border
+            return coords.Item1 < 1 || coords.Item1 > map.width - 2 || coords.Item2 < 1 || coords.Item2 > map.height - 2;
         }
 
         public double Distance((int, int) coords1, (int, int) coords2)
@@ -144,13 +176,6 @@ namespace Pacman
         {
             id = 'p';
             slowness = 4;
-        }
-
-        Random generator = new Random();
-        private bool OutsideOfMap((int, int) coords)
-        {
-            // outside OR on the border
-            return coords.Item1 < 1 || coords.Item1 > map.width - 2 || coords.Item2 < 1 || coords.Item2 > map.height - 2;
         }
 
         public override void Move()
@@ -244,7 +269,6 @@ namespace Pacman
             x = to.Item1;
             y = to.Item2;
 
-            double d = Distance(goal);
             if (Distance(goal) < 3)
             { 
                 middleIndex = (middleIndex + generator.Next(1, 4)) % 4;
