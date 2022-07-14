@@ -144,7 +144,7 @@ namespace Pacman
         public double Distance((int, int) coords1, (int, int) coords2)
         {
            return Math.Sqrt(Math.Pow(Math.Abs(coords1.Item1 - coords2.Item1), 2) +
-                Math.Pow(Math.Abs(coords1.Item1 - coords2.Item2), 2));
+                Math.Pow(Math.Abs(coords1.Item2 - coords2.Item2), 2));
         }
 
         public double Distance((int, int) coords)
@@ -175,7 +175,7 @@ namespace Pacman
         public PinkGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'p';
-            slowness = 4;
+            slowness = 5;
         }
 
         public override void Move()
@@ -209,7 +209,7 @@ namespace Pacman
         public OrangeGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'o';
-            slowness = 3;
+            slowness = 5;
             corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
                 (map.width - 2, map.height - 2), (1, map.height - 2) };
         }
@@ -223,7 +223,6 @@ namespace Pacman
         {
             // chases after pacman unless too close, then goes to corner for a while
 
-            // Euclidean distance = \sqrt{ |o.x - p.x|^2 + |o.y - p.y|^2 }
             double distance = Distance((pacman.x, pacman.y));
             if (distance < 5)
                 { bloodthirsty = false; }
@@ -248,31 +247,32 @@ namespace Pacman
 
     class BlueGhost : Ghost
     {
-        public BlueGhost(Map map, int x, int y) : base(map, x, y)
+        public BlueGhost(Map map, int x, int y): base(map, x, y)
         {
             id = 'b';
-            slowness = 4;
-            int midx = 9;
-            int midy = 12;
-            middles = new (int, int)[] { (midx, map.height - 2), (1, midy), (midx, 1),
-                (map.width - 2, midy) };
+            slowness = 5;
         }
 
-        private (int, int)[] middles;
-        private int middleIndex = 0;
-        private Random generator = new Random();
+        public List<Ghost> ghosts = new List<Ghost>();
 
         public override void Move()
         {
-            (int, int) goal = middles[middleIndex];
-            (int, int) to = NextOnShortest(goal.Item1, goal.Item2);
+            // goes to the center of gravity of other characters flipped by diagonal
+            int total_x = 0;
+            int total_y = 0;
+            foreach (Ghost gh in ghosts)
+            {
+                if (gh != this)
+                {
+                    total_x += gh.x;
+                    total_y += gh.y;
+                }
+            }
+            total_x += pacman.x;
+            total_y += pacman.y;
+            (int, int) to = NextOnShortest(total_y / ghosts.Count, total_x / ghosts.Count);
             x = to.Item1;
             y = to.Item2;
-
-            if (Distance(goal) < 3)
-            { 
-                middleIndex = (middleIndex + generator.Next(1, 4)) % 4;
-            }
         }
     }
 
@@ -461,6 +461,7 @@ namespace Pacman
             height = int.Parse(sr.ReadLine());
             plan = new char[width, height];
 
+            BlueGhost blue = new BlueGhost(this, 0, 0);
             for (int y = 0; y < height; y++)
             {
                 string line = sr.ReadLine();
@@ -495,7 +496,8 @@ namespace Pacman
                             plan[x, y] = ' ';
                             break;
                         case 'b':
-                            BlueGhost blue = new BlueGhost(this, x, y);
+                            blue.x = x;
+                            blue.y = y;
                             ghosts.Add(blue);
                             plan[x, y] = ' ';
                             break;
@@ -509,6 +511,7 @@ namespace Pacman
             { 
                 gh.pacman = pacman;
             }
+            blue.ghosts = ghosts;
             statusbar.width = width * sx;
         }
 
