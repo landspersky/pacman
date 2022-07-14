@@ -109,15 +109,15 @@ namespace Pacman
             return firstParent[(to_x, to_y)];
         }
 
-        public double Distance(int x1, int y1, int x2, int y2)
+        public double Distance((int, int) coords1, (int, int) coords2)
         {
-           return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2), 2) +
-                Math.Pow(Math.Abs(y1 - y2), 2));
+           return Math.Sqrt(Math.Pow(Math.Abs(coords1.Item1 - coords2.Item1), 2) +
+                Math.Pow(Math.Abs(coords1.Item1 - coords2.Item2), 2));
         }
 
-        public double Distance(int x1, int y1)
+        public double Distance((int, int) coords)
         {
-            return Distance(x1, y1, x, y);
+            return Distance(coords, (x, y));
         }
     }
 
@@ -199,7 +199,7 @@ namespace Pacman
             // chases after pacman unless too close, then goes to corner for a while
 
             // Euclidean distance = \sqrt{ |o.x - p.x|^2 + |o.y - p.y|^2 }
-            double distance = Distance(pacman.x, pacman.y);
+            double distance = Distance((pacman.x, pacman.y));
             if (distance < 5)
                 { bloodthirsty = false; }
             if ( (x,y) == corners[cornerIndex] || steps == 10)
@@ -218,6 +218,37 @@ namespace Pacman
             }
             x = to.Item1;
             y = to.Item2;
+        }
+    }
+
+    class BlueGhost : Ghost
+    {
+        public BlueGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'b';
+            slowness = 4;
+            int midx = 9;
+            int midy = 12;
+            middles = new (int, int)[] { (midx, map.height - 2), (1, midy), (midx, 1),
+                (map.width - 2, midy) };
+        }
+
+        private (int, int)[] middles;
+        private int middleIndex = 0;
+        private Random generator = new Random();
+
+        public override void Move()
+        {
+            (int, int) goal = middles[middleIndex];
+            (int, int) to = NextOnShortest(goal.Item1, goal.Item2);
+            x = to.Item1;
+            y = to.Item2;
+
+            double d = Distance(goal);
+            if (Distance(goal) < 3)
+            { 
+                middleIndex = (middleIndex + generator.Next(1, 4)) % 4;
+            }
         }
     }
 
@@ -437,6 +468,11 @@ namespace Pacman
                         case 'o':
                             OrangeGhost orange = new OrangeGhost(this, x, y);
                             ghosts.Add(orange);
+                            plan[x, y] = ' ';
+                            break;
+                        case 'b':
+                            BlueGhost blue = new BlueGhost(this, x, y);
+                            ghosts.Add(blue);
                             plan[x, y] = ' ';
                             break;
                         default:
