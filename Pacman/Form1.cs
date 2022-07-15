@@ -11,6 +11,7 @@ namespace Pacman
         KeyPressed keyPressed;
         Size size;
         bool frozen;
+        private int level;
         private BufferedGraphicsContext context;
         private BufferedGraphics grafx;
 
@@ -33,7 +34,7 @@ namespace Pacman
             grafx.Render(e.Graphics);
         }
 
-        private void initializeScreen(Screen screen)
+        private void initializeScreen(Screen screen, int lives, int score)
         {
             bool toGame;
             switch (screen)
@@ -41,7 +42,7 @@ namespace Pacman
                 case Screen.Game:
                     toGame = true;
                     timerMenu.Enabled = false;
-                    this.statusBar = new StatusBar(lLives, lScore, bMenu);
+                    this.statusBar = new StatusBar(lLives, lScore, bMenu, lives, score);
                     map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
                         @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar,
                         timerGame);
@@ -69,6 +70,8 @@ namespace Pacman
             bMenu.Visible = toGame;
         }
 
+        private void initializeScreen(Screen screen)
+            { initializeScreen(screen, 3, 0); }
         private void drawMenuScreen()
         {
             int midx = ClientSize.Width / 2;
@@ -128,13 +131,34 @@ namespace Pacman
                     break;
                 case State.win:
                     timerGame.Enabled = false;
-                    MessageBox.Show("You won!");
-                    initializeScreen(Screen.Menu);
+                    if (level == 3)
+                    {
+                        MessageBox.Show("Great. I think you've had enough," +
+                            " please do something else, the Pacman is tired and needs to take a break.");
+                        initializeScreen(Screen.Menu);
+                    }
+                    else
+                    { 
+                        timerGame.Reset();
+                        initializeScreen(Screen.Game, statusBar.livesLeft, statusBar.score);
+                        level++;
+                    }
                     break;
                 case State.loss:
                     timerGame.Enabled = false;
-                    MessageBox.Show("You lost!");
-                    initializeScreen(Screen.Menu);
+                    if (statusBar.livesLeft == 0)
+                    {
+                        MessageBox.Show("You lost!");
+                        initializeScreen(Screen.Menu);
+                    }
+                    else
+                    {
+                        timerGame.Reset();
+                        map.Reset();
+                        map.state = State.running;
+                        Thread.Sleep(1000);
+                        timerGame.Enabled = true;
+                    }
                     break;
                 default:
                     break;

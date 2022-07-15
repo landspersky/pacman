@@ -14,12 +14,14 @@ namespace Pacman
         protected Map map;
         public int slowness; // period of movement in ticks
         public (int, int) location;
+        public (int, int) origin;
         public abstract void Move();
 
         protected Character(Map map, int x, int y)
         {
             this.map = map;
             this.location = (x, y);
+            this.origin = (x, y);
         }
 
         protected (int, int) TargetCoords(Direction direction, (int, int) coords)
@@ -185,7 +187,8 @@ namespace Pacman
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'r';
-            slowness = 12;
+            slowness = 24;
+            enabled = true;
         }
 
         public override void Move()
@@ -201,7 +204,7 @@ namespace Pacman
         public PinkGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'p';
-            slowness = 10;
+            slowness = 20;
         }
 
         public override void Move()
@@ -233,7 +236,7 @@ namespace Pacman
         public OrangeGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'o';
-            slowness = 10;
+            slowness = 20;
             corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
                 (map.width - 2, map.height - 2), (1, map.height - 2) };
         }
@@ -273,7 +276,7 @@ namespace Pacman
         public BlueGhost(Map map, int x, int y): base(map, x, y)
         {
             id = 'b';
-            slowness = 5;
+            slowness = 10;
         }
 
         public List<Ghost> ghosts = new List<Ghost>();
@@ -360,11 +363,13 @@ namespace Pacman
         private Label lScore;
         private Button bMenu;
 
-        public StatusBar(Label lLives, Label lScore, Button bMenu)
+        public StatusBar(Label lLives, Label lScore, Button bMenu, int lives, int points)
         {
             this.lLives = lLives;
             this.lScore = lScore;
             this.bMenu = bMenu;
+            livesLeft = lives;
+            score = points;
         }
 
         public void Draw(Map map)
@@ -521,7 +526,6 @@ namespace Pacman
                         // the ghosts are not in plan
                         case 'r':
                             RedGhost red = new RedGhost(this, x, y);
-                            red.enabled = true;
                             ghosts.Add(red);
                             spawn = (x, y);
                             plan[x, y] = ' ';
@@ -540,6 +544,7 @@ namespace Pacman
                             break;
                         case 'b':
                             blue.location = (x, y);
+                            blue.origin = (x, y);
                             ghosts.Add(blue);
                             disabledGhosts.Enqueue(blue);
                             plan[x, y] = ' ';
@@ -556,6 +561,31 @@ namespace Pacman
             }
             blue.ghosts = ghosts;
             statusbar.width = width * sx;
+        }
+
+        public void Reset()
+        {
+            frightenedMode = false;
+            disabledGhosts.Clear();
+            plan[pacman.location.Item1, pacman.location.Item2] = ' ';
+            pacman.location = pacman.origin;
+            plan[pacman.location.Item1, pacman.location.Item2] = 'P';
+
+            foreach (Ghost gh in ghosts)
+            {
+                gh.location = gh.origin;
+                if (gh.origin == spawn)
+                {
+                    // trick to enable RedGhost without creating new one
+                    gh.enabled = true;
+                }
+                else
+                { 
+                    gh.enabled = false;
+                    disabledGhosts.Enqueue(gh);
+                }
+            }
+
         }
 
         public void MovePacman((int, int) from, (int, int) to)
@@ -583,7 +613,10 @@ namespace Pacman
         private void ResolveGhostEncounter(Ghost gh)
         {
             if (!frightenedMode)
-                { state = State.loss; }
+            {
+                statusbar.livesLeft--;
+                state = State.loss;
+            }
             else
             {
                 statusbar.score += 50;
@@ -625,6 +658,8 @@ namespace Pacman
                     if (gh.location == pacman.location)
                         { ResolveGhostEncounter(gh); }
                 }
+                if (state == State.loss)
+                    { break; }
             }
         }
     }
