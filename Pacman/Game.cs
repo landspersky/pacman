@@ -13,20 +13,20 @@ namespace Pacman
     {
         protected Map map;
         public int slowness; // period of movement in ticks
-        public int x;
-        public int y;
+        public (int, int) location;
         public abstract void Move();
 
         protected Character(Map map, int x, int y)
         {
             this.map = map;
-            this.x = x;
-            this.y = y;
+            this.location = (x, y);
         }
 
-        protected (int, int) TargetCoords(Direction direction, int from_x, int from_y)
+        protected (int, int) TargetCoords(Direction direction, (int, int) coords)
         {
             // returns (x, y) of the field that is 'direction' of (from_x, from_y)
+            int from_x = coords.Item1;
+            int from_y = coords.Item2;
             switch (direction)
             {
                 case Direction.left:
@@ -50,18 +50,17 @@ namespace Pacman
         protected (int, int) TargetCoords(Direction direction)
         {
             // return (x, y) of field 'direction' of character
-            return TargetCoords(direction, x, y);
+            return TargetCoords(direction, location);
         }
 
-        protected bool IsFreeSpace(Direction direction, int from_x, int from_y)
+        protected bool IsFreeSpace(Direction direction, (int, int) coords)
         {
-            var coords = TargetCoords(direction, from_x, from_y);
-            return map.IsFreeSpace(coords);
+            return map.IsFreeSpace(TargetCoords(direction, coords));
         }
 
         protected bool IsFreeSpace(Direction direction)
         {
-            return IsFreeSpace(direction, x, y);
+            return IsFreeSpace(direction, location);
         }
     }
     abstract class Ghost : Character
@@ -75,16 +74,16 @@ namespace Pacman
         {
         }
 
-        protected (int, int) NextOnShortest(int to_x, int to_y)
+        protected (int, int) NextOnShortest((int, int) to)
         {
             // returns the next location on the shortest path to (to_x, to_y)
-            if ((x, y) == (to_x, to_y))
-                { return (x, y); }
+            if (location == to)
+                { return location; }
 
             Queue<(int, int)> q = new Queue<(int, int)>();
             q.Enqueue((x, y));
             Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
-            (int, int) current = (to_x, to_y);
+            (int, int) current = location;
 
             // finds the closest free spot
             // allows us to find paths to spots with walls
@@ -99,7 +98,7 @@ namespace Pacman
                         { break; }
                     foreach (Direction d in Enum.GetValues(typeof(Direction)))
                     {
-                        (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
+                        (int, int) neighbour = TargetCoords(d, current);
                         if (!visited.Contains(neighbour) && !OutsideOfMap(neighbour))
                         {
                             q.Enqueue(neighbour);
@@ -108,13 +107,12 @@ namespace Pacman
                     }
                     
                 }
-                to_x = current.Item1;
-                to_y = current.Item2;
+                to = current;
                 q.Clear();
-                q.Enqueue((x, y));
+                q.Enqueue(location);
             }
 
-            while (! firstParent.ContainsKey((to_x, to_y)))
+            while (! firstParent.ContainsKey(to))
             {
                 // when the location is in inaccessible, eg ghost box
                 if (q.Count == 0)
@@ -122,7 +120,7 @@ namespace Pacman
                 current = q.Dequeue();
                 foreach (Direction d in Enum.GetValues(typeof(Direction)))
                 {
-                    (int, int) neighbour = TargetCoords(d, current.Item1, current.Item2);
+                    (int, int) neighbour = TargetCoords(d, current);
                     if (! firstParent.ContainsKey(neighbour) && map.IsFreeSpace(neighbour) && ! OutsideOfMap(neighbour))
                     {
                         q.Enqueue(neighbour);
@@ -133,7 +131,7 @@ namespace Pacman
                     }
                 }
             }
-            return firstParent[(to_x, to_y)];
+            return firstParent[to];
         }
 
         protected bool OutsideOfMap((int, int) coords)
@@ -150,7 +148,7 @@ namespace Pacman
 
         public double Distance((int, int) coords)
         {
-            return Distance(coords, (x, y));
+            return Distance(coords, location);
         }
     }
 
@@ -166,8 +164,7 @@ namespace Pacman
         {
             // chases after pacman
             (int, int) to = NextOnShortest(pacman.x, pacman.y);
-            x = to.Item1;
-            y = to.Item2;
+            location = to;
         }
     }
 
@@ -185,21 +182,21 @@ namespace Pacman
 
             // get coords of field two steps ahead of pacman
             Direction d = pacman.direction;
-            (int, int) temp = TargetCoords(d, pacman.x, pacman.y);
-            temp = TargetCoords(d, temp.Item1, temp.Item2);
+            (int, int) temp = TargetCoords(d, pacman.location);
+            temp = TargetCoords(d, temp);
 
             if (OutsideOfMap(temp))
             { 
                 // we look at the opposite direction (suppose the correct order of enum)
                 d = (Direction)(((int)d + 2) % 4);
-                temp = TargetCoords(d, pacman.x, pacman.y);
-                temp = TargetCoords(d, temp.Item1, temp.Item2);
+                temp = TargetCoords(d, pacman.location);
+                temp = TargetCoords(d, temp);
             }
 
             while (! map.IsFreeSpace(temp))
-                { temp = TargetCoords(d, temp.Item1, temp.Item2); }
+                { temp = TargetCoords(d, temp); }
 
-            (int, int) to = NextOnShortest(temp.Item1, temp.Item2);
+            (int, int) to = NextOnShortest(temp);
             x = to.Item1;
             y = to.Item2;
         }
@@ -227,7 +224,7 @@ namespace Pacman
             double distance = Distance((pacman.x, pacman.y));
             if (distance < 5)
                 { bloodthirsty = false; }
-            if ( (x,y) == corners[cornerIndex] || steps == 10)
+            if ( location == corners[cornerIndex] || steps == 10)
             {
                 bloodthirsty = true;
                 cornerIndex = (cornerIndex + 1) % 4;
@@ -238,11 +235,10 @@ namespace Pacman
                 { to = NextOnShortest(pacman.x, pacman.y); }
             else
             { 
-                to = NextOnShortest(corners[cornerIndex].Item1, corners[cornerIndex].Item2);
+                to = NextOnShortest(corners[cornerIndex]);
                 steps++;
             }
-            x = to.Item1;
-            y = to.Item2;
+            location = to;
         }
     }
 
@@ -265,19 +261,18 @@ namespace Pacman
             {
                 if (gh != this)
                 {
-                    center_x += gh.x;
-                    center_y += gh.y;
+                    center_x += gh.location.Item1;
+                    center_y += gh.location.Item2;
                 }
             }
-            center_x = (center_x + pacman.x) / ghosts.Count;
-            center_y = (center_y + pacman.y) / ghosts.Count;
+            center_x = (center_x + pacman.location.Item1) / ghosts.Count;
+            center_y = (center_y + pacman.location.Item2) / ghosts.Count;
             int midx = map.width / 2;
             int midy = map.height / 2;
 
 
-            (int, int) to = NextOnShortest(midx + midx - center_x, midy + midy - center_y);
-            x = to.Item1;
-            y = to.Item2;
+            (int, int) to = NextOnShortest((midx + midx - center_x, midy + midy - center_y));
+            location = to;
         }
     }
 
@@ -322,7 +317,7 @@ namespace Pacman
 
             if (map.IsFreeSpace(new_coords))
             {
-                map.MovePacman(x, y, new_coords.Item1, new_coords.Item2);
+                map.MovePacman(location, new_coords);
             }
         }
     }
@@ -509,8 +504,7 @@ namespace Pacman
                             plan[x, y] = ' ';
                             break;
                         case 'b':
-                            blue.x = x;
-                            blue.y = y;
+                            blue.location = (x, y);
                             ghosts.Add(blue);
                             disabledGhosts.Enqueue(blue);
                             plan[x, y] = ' ';
@@ -529,25 +523,24 @@ namespace Pacman
             statusbar.width = width * sx;
         }
 
-        public void MovePacman(int from_x, int from_y, int to_x, int to_y)
+        public void MovePacman((int, int) from, (int, int) to)
         {
             // we suppose the move is valid which is checked by other functions
-            char to = plan[to_x, to_y];
-            if (to == '.' || to == '$')
+            char to_item = plan[to.Item1, to.Item2];
+            if (to_item == '.' || to_item == '$')
             {
                 statusbar.coinsLeft--;
                 statusbar.score++;
                 if (statusbar.coinsLeft == 0)
                 { state = State.win; }
             }
-            plan[to_x, to_y] = 'P';
-            plan[from_x, from_y] = ' ';
-            pacman.x = to_x;
-            pacman.y = to_y;
+            plan[to.Item1, to.Item2] = 'P';
+            plan[from.Item1, from.Item2] = ' ';
+            pacman.location = to;
 
             foreach (Ghost gh in ghosts)
             {
-                if (gh.x == to_x && gh.y == to_y)
+                if (gh.location == pacman.location)
                     { state = State.loss; }
             }
         }
@@ -564,20 +557,19 @@ namespace Pacman
             {
                 Ghost next = disabledGhosts.Dequeue();
                 next.enabled = true;
-                next.x = spawn.Item1;
-                next.y = spawn.Item2;
+                next.location = spawn;
             }
             foreach (Ghost gh in ghosts)
             {
                 // have to check twice or they could cross and not be on same coords
                 // = the ghosts are smart and stay on the spot if needed
-                if (gh.x == pacman.x && gh.y == pacman.y)
+                if (gh.location == pacman.location)
                     { state = State.loss; }
                 else if (gh.enabled)
                 {
                     if (tickCounter % gh.slowness == 0)
                         { gh.Move(); }
-                    if (gh.x == pacman.x && gh.y == pacman.y)
+                    if (gh.location == pacman.location)
                         { state = State.loss; }
                 }
             }
