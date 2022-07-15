@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Pacman
 {
     public partial class Form1 : Form
@@ -5,48 +7,58 @@ namespace Pacman
         public enum Screen { Menu, Game };
 
         Map map;
-        Graphics g;
         StatusBar statusBar;
-        Point coords;
         KeyPressed keyPressed;
         Size size;
         bool frozen;
+        private int level;
+        private BufferedGraphicsContext context;
+        private BufferedGraphics grafx;
 
         public Form1()
         {
             size = this.Size;
-            g = CreateGraphics();
             InitializeComponent();
-            initializeScreen(Screen.Menu);
+
+            context = BufferedGraphicsManager.Current;
+            context.MaximumBuffer = new Size(this.Width + 1, this.Height + 1);
+            grafx = context.Allocate(this.CreateGraphics(),
+                new Rectangle(0, 0, this.Width, this.Height));
+
+            InitializeScreen(Screen.Menu);
         }
 
-        private void initializeScreen(Screen screen)
+
+        protected override void OnPaint(PaintEventArgs e)
         {
-            g = CreateGraphics();
+            grafx.Render(e.Graphics);
+        }
+
+        private void InitializeScreen(Screen screen, int lives, int score)
+        {
             bool toGame;
             switch (screen)
             {
                 case Screen.Game:
                     toGame = true;
                     timerMenu.Enabled = false;
-                    this.statusBar = new StatusBar(lLives, lScore, bMenu);
-                    map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
+                    this.statusBar = new StatusBar(lLives, lScore, bMenu, lives, score);
+                    map = new Map(this, "plan.txt", "basic_icons.png", statusBar, timerGame);
                     timerGame.Enabled = true;
                     break;
                 case Screen.Menu:
                     toGame = false;
                     timerGame.Enabled = false;
-                    eraseScreen();
+                    EraseScreen();
                     timerMenu.Enabled = true;
                     break;
                 default:
                     toGame = false;
                     break;
             }
+            timerGame.ticks = 0;
             keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
-            bSettings.Visible = !toGame;
             lAuthor.Visible = !toGame;
             lTitle.Visible = !toGame;
 
@@ -55,7 +67,9 @@ namespace Pacman
             bMenu.Visible = toGame;
         }
 
-        private void drawMenuScreen()
+        private void InitializeScreen(Screen screen)
+            { InitializeScreen(screen, 3, 0); }
+        private void DrawMenuScreen()
         {
             int midx = ClientSize.Width / 2;
             int padding = 10;
@@ -68,23 +82,20 @@ namespace Pacman
 
             bPlay.Left = midx - bPlay.Width / 2;
             bPlay.Top = ClientSize.Height * 3 / 5;
-
-            bSettings.Left = ClientSize.Width - bSettings.Width - padding;
-            bSettings.Top = padding;
         }
 
-        private void eraseScreen()
+        private void EraseScreen()
         {
             // Make the screen black
             SolidBrush blackBrush = new SolidBrush(Color.Black);
             Rectangle rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
-            g.FillRectangle(blackBrush, rect);
+            grafx.Graphics.FillRectangle(blackBrush, rect);
+            Refresh();
         }
-
 
         private void bPlay_Click(object sender, EventArgs e)
         {
-            initializeScreen(Screen.Game);
+            InitializeScreen(Screen.Game);
         }
 
         private void timerGame_Tick(object sender, EventArgs e)
@@ -98,11 +109,15 @@ namespace Pacman
                     {
                         if (frozen)
                         {
-                            eraseScreen();
+                            EraseScreen();
                             frozen = false;
                         }
+                        timerGame.ticks++;
+                        if (timerGame.ticks - timerGame.lastFrightened == timerGame.frightenedPeriod)
+                            { map.frightenedMode = false; }
                         map.MoveObjects(keyPressed);
-                        map.Draw(g, ClientSize.Width, ClientSize.Height);
+                        map.Draw(grafx.Graphics, ClientSize.Width, ClientSize.Height);
+                        Refresh();
                         statusBar.Draw(map);
                     }
                     else
@@ -110,25 +125,49 @@ namespace Pacman
                     break;
                 case State.win:
                     timerGame.Enabled = false;
-                    MessageBox.Show("You won!");
-                    initializeScreen(Screen.Menu);
+                    if (level == 3)
+                    {
+                        MessageBox.Show("Great. I think you've had enough," +
+                            " please do something else, the Pacman is tired and needs to take a break.");
+                        InitializeScreen(Screen.Menu);
+                    }
+                    else
+                    { 
+                        timerGame.Reset();
+                        InitializeScreen(Screen.Game, statusBar.livesLeft, statusBar.score);
+                        level++;
+                    }
                     break;
-                // loss scenario
+                case State.loss:
+                    timerGame.Enabled = false;
+                    if (statusBar.livesLeft == 0)
+                    {
+                        MessageBox.Show("You lost!");
+                        InitializeScreen(Screen.Menu);
+                    }
+                    else
+                    {
+                        timerGame.Reset();
+                        map.Reset();
+                        map.state = State.running;
+                        Thread.Sleep(1000);
+                        timerGame.Enabled = true;
+                    }
+                    break;
                 default:
                     break;
             }
             size = this.Size;
-            coords = this.Location;
         }
 
         private void timerMenu_Tick(object sender, EventArgs e)
         {
-            drawMenuScreen();
+            DrawMenuScreen();
         }
 
         private void bMenu_Click(object sender, EventArgs e)
         {
-            initializeScreen(Screen.Menu);
+            InitializeScreen(Screen.Menu);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -161,5 +200,24 @@ namespace Pacman
             keyPressed = KeyPressed.none;
         }
 
+    }
+
+    public class GameTimer : System.Windows.Forms.Timer
+    {
+        public int ticks = 0;
+        public int lastEnabled = 0;
+        public int enablePeriod = 100;
+        public int lastFrightened = 0;
+        public int frightenedPeriod = 300;
+        public GameTimer(IContainer container) : base(container)
+        {
+        }
+
+        public void Reset()
+        {
+            ticks = 0;
+            lastEnabled = 0;
+            lastFrightened = 0;
+        }
     }
 }

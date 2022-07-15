@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Pacman
 {
@@ -8,50 +9,310 @@ namespace Pacman
 
     public enum Direction {  left, up, right, down };
 
-    class Pacman
+    abstract class Character
     {
-        private Map map;
-        public int x;
-        public int y;
-        public bool opened; // altering between two icons
-        public Direction direction = Direction.left;
+        protected Map map;
+        public int slowness; // period of movement in ticks
+        public (int, int) location;
+        public (int, int) origin;
+        public abstract void Move();
 
-        public Pacman(Map map, int x, int y)
+        protected Character(Map map, int x, int y)
         {
             this.map = map;
-            this.x = x;
-            this.y = y;
+            this.location = (x, y);
+            this.origin = (x, y);
         }
 
-        private (int, int) TargetCoords(Direction direction)
+        protected (int, int) TargetCoords(Direction direction, (int, int) coords)
         {
-            // returns (x, y) of the field that is 'direction' of pacman
-            int target_x = x;
-            int target_y = y;
+            // returns (x, y) of the field that is 'direction' of (from_x, from_y)
+            int from_x = coords.Item1;
+            int from_y = coords.Item2;
             switch (direction)
             {
                 case Direction.left:
-                    target_x--;
+                    from_x--;
                     break;
                 case Direction.up:
-                    target_y--;
+                    from_y--;
                     break;
                 case Direction.right:
-                    target_x++;
+                    from_x++;
                     break;
                 case Direction.down:
-                    target_y++;
+                    from_y++;
                     break;
                 default:
                     break;
             }
-            return (target_x, target_y);
+            return (from_x, from_y);
         }
-        
-        private bool IsFreeSpace(Direction direction)
+
+        protected (int, int) TargetCoords(Direction direction)
         {
-            var coords = TargetCoords(direction);
-            return map.IsFreeSpace(coords.Item1, coords.Item2);
+            // return (x, y) of field 'direction' of character
+            return TargetCoords(direction, location);
+        }
+
+        protected bool IsFreeSpace(Direction direction, (int, int) coords)
+        {
+            return map.IsFreeSpace(TargetCoords(direction, coords));
+        }
+
+        protected bool IsFreeSpace(Direction direction)
+        {
+            return IsFreeSpace(direction, location);
+        }
+    }
+    abstract class Ghost : Character
+    {
+        public char id;
+        public bool enabled = false;
+        private (int, int) lastLocation = (0, 0);
+        public Pacman pacman;
+        private Random generator = new Random();
+
+        protected Ghost(Map map, int x, int y) : base(map, x, y)
+        {
+        }
+
+        protected (int, int) NextOnShortest((int, int) to)
+        {
+            // returns the next location on the shortest path to (to_x, to_y)
+            if (location == to)
+                { return location; }
+
+            Queue<(int, int)> q = new Queue<(int, int)>();
+            q.Enqueue(location);
+            Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
+            (int, int) current = location;
+
+            // finds the closest free spot
+            // allows us to find paths to spots with walls
+            if (! map.IsFreeSpace(current))
+            {
+                List<(int, int)> visited = new List<(int, int)>();
+                visited.Add(current);
+                while ( true )
+                {
+                    current = q.Dequeue();
+                    if (map.IsFreeSpace(current))
+                        { break; }
+                    foreach (Direction d in Enum.GetValues(typeof(Direction)))
+                    {
+                        (int, int) neighbour = TargetCoords(d, current);
+                        if (!visited.Contains(neighbour) && !OutsideOfMap(neighbour))
+                        {
+                            q.Enqueue(neighbour);
+                            visited.Add(neighbour);
+                        }
+                    }
+                    
+                }
+                to = current;
+                q.Clear();
+                q.Enqueue(location);
+            }
+
+            while (! firstParent.ContainsKey(to))
+            {
+                // when the location is in inaccessible, eg ghost box
+                if (q.Count == 0)
+                    { return location; }
+                current = q.Dequeue();
+                foreach (Direction d in Enum.GetValues(typeof(Direction)))
+                {
+                    (int, int) neighbour = TargetCoords(d, current);
+                    if (! firstParent.ContainsKey(neighbour) && map.IsFreeSpace(neighbour) && ! OutsideOfMap(neighbour))
+                    {
+                        q.Enqueue(neighbour);
+                        if (firstParent.ContainsKey(current))
+                            { firstParent[neighbour] = firstParent[current]; }
+                        else
+                            { firstParent[neighbour] = neighbour; }
+                    }
+                }
+            }
+            return firstParent[to];
+        }
+
+        protected bool OutsideOfMap((int, int) coords)
+        {
+            // outside OR on the border
+            return coords.Item1 < 1 || coords.Item1 > map.width - 2 || coords.Item2 < 1 || coords.Item2 > map.height - 2;
+        }
+
+        public double Distance((int, int) coords1, (int, int) coords2)
+        {
+           return Math.Sqrt(Math.Pow(Math.Abs(coords1.Item1 - coords2.Item1), 2) +
+                Math.Pow(Math.Abs(coords1.Item2 - coords2.Item2), 2));
+        }
+
+        public double Distance((int, int) coords)
+        {
+            return Distance(coords, location);
+        }
+
+        private void MoveRandomly()
+        {
+            // moves randomly, preferably to a location different to last one
+            List<(int, int)> possibleMoves = new List<(int, int)>();
+            foreach (Direction d in Enum.GetValues(typeof(Direction)))
+            {
+                (int, int) neighbour = TargetCoords(d);
+                if ( map.IsFreeSpace(neighbour) && neighbour != lastLocation)
+                    { possibleMoves.Add(neighbour); }
+            }
+            if (possibleMoves.Count == 0) 
+                { location = lastLocation; }
+            else
+                { location = possibleMoves[generator.Next(possibleMoves.Count)]; }
+
+
+        }
+        public void MoveGhost()
+        {
+            (int, int) temp = location;
+            if (! map.frightenedMode )
+                { Move(); }
+            else
+                { MoveRandomly(); }
+            lastLocation = temp;
+        }
+    }
+
+    class RedGhost : Ghost
+    {
+        public RedGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'r';
+            slowness = 24;
+            enabled = true;
+        }
+
+        public override void Move()
+        {
+            // chases after pacman
+            (int, int) to = NextOnShortest(pacman.location);
+            location = to;
+        }
+    }
+
+    class PinkGhost : Ghost
+    {
+        public PinkGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'p';
+            slowness = 20;
+        }
+
+        public override void Move()
+        {
+            // wants to get ahead of pacman
+
+            // get coords of field two steps ahead of pacman
+            Direction d = pacman.direction;
+            (int, int) temp = TargetCoords(d, pacman.location);
+            temp = TargetCoords(d, temp);
+
+            if (OutsideOfMap(temp))
+            { 
+                // we look at the opposite direction (suppose the correct order of enum)
+                d = (Direction)(((int)d + 2) % 4);
+                temp = TargetCoords(d, pacman.location);
+                temp = TargetCoords(d, temp);
+            }
+
+            while (! map.IsFreeSpace(temp))
+                { temp = TargetCoords(d, temp); }
+
+            location = NextOnShortest(temp);
+        }
+    }
+
+    class OrangeGhost : Ghost
+    {
+        public OrangeGhost(Map map, int x, int y) : base(map, x, y)
+        {
+            id = 'o';
+            slowness = 20;
+            corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
+                (map.width - 2, map.height - 2), (1, map.height - 2) };
+        }
+
+        private (int, int)[] corners;
+        private bool bloodthirsty = false;
+        private int cornerIndex = 0;
+        private int steps = 0;
+
+        public override void Move()
+        {
+            // chases after pacman unless too close, then goes to corner for a while
+
+            double distance = Distance(pacman.location);
+            if (distance < 5)
+                { bloodthirsty = false; }
+            if ( location == corners[cornerIndex] || steps == 10)
+            {
+                bloodthirsty = true;
+                cornerIndex = (cornerIndex + 1) % 4;
+                steps = 0;
+            }
+            (int, int) to;
+            if (bloodthirsty)
+                { to = NextOnShortest(pacman.location); }
+            else
+            { 
+                to = NextOnShortest(corners[cornerIndex]);
+                steps++;
+            }
+            location = to;
+        }
+    }
+
+    class BlueGhost : Ghost
+    {
+        public BlueGhost(Map map, int x, int y): base(map, x, y)
+        {
+            id = 'b';
+            slowness = 10;
+        }
+
+        public List<Ghost> ghosts = new List<Ghost>();
+
+        public override void Move()
+        {
+            // goes to the center of gravity of other characters flipped by diagonal
+            int center_x = 0;
+            int center_y = 0;
+            foreach (Ghost gh in ghosts)
+            {
+                if (gh != this)
+                {
+                    center_x += gh.location.Item1;
+                    center_y += gh.location.Item2;
+                }
+            }
+            center_x = (center_x + pacman.location.Item1) / ghosts.Count;
+            center_y = (center_y + pacman.location.Item2) / ghosts.Count;
+            int midx = map.width / 2;
+            int midy = map.height / 2;
+
+
+            (int, int) to = NextOnShortest((midx + midx - center_x, midy + midy - center_y));
+            location = to;
+        }
+    }
+
+    class Pacman : Character
+    {
+        public bool opened; // altering between two icons
+        public Direction direction = Direction.right;
+
+        public Pacman(Map map, int x, int y) : base(map, x, y)
+        {
+            slowness = 3;
         }
 
         public void Turn(KeyPressed key)
@@ -79,13 +340,13 @@ namespace Pacman
             }
         }
 
-        public void Move()
+        public override void Move()
         {
             (int, int) new_coords = TargetCoords(direction);
 
-            if (map.IsFreeSpace(new_coords.Item1, new_coords.Item2))
+            if (map.IsFreeSpace(new_coords))
             {
-                map.Move(x, y, new_coords.Item1, new_coords.Item2);
+                map.MovePacman(location, new_coords);
             }
         }
     }
@@ -102,11 +363,13 @@ namespace Pacman
         private Label lScore;
         private Button bMenu;
 
-        public StatusBar(Label lLives, Label lScore, Button bMenu)
+        public StatusBar(Label lLives, Label lScore, Button bMenu, int lives, int points)
         {
             this.lLives = lLives;
             this.lScore = lScore;
             this.bMenu = bMenu;
+            livesLeft = lives;
+            score = points;
         }
 
         public void Draw(Map map)
@@ -140,6 +403,9 @@ namespace Pacman
     class Map
     {
         private char[,] plan;
+        private (int, int) spawn;
+        private (int, int) home = (9, 10);
+        public bool frightenedMode = false;
         public int width;
         public int height;
         public int startx;
@@ -152,11 +418,14 @@ namespace Pacman
 
         public Pacman pacman;
         public StatusBar statusbar;
-        // other atributes
+        private GameTimer timer;
+        public List<Ghost> ghosts;
+        private Queue<Ghost> disabledGhosts;
 
-        public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
+        public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar, GameTimer timerGame)
         {
             this.statusbar = statusBar;
+            this.timer = timerGame;
             LoadIcons(iconsPath);
             LoadMap(mapPath);
 
@@ -165,9 +434,9 @@ namespace Pacman
                 height * sx + 2 * (statusbar.height + padding) );
         }
 
-        public bool IsFreeSpace(int x, int y)
+        public bool IsFreeSpace((int, int) coords)
         {
-            return plan[x, y] != 'X';
+            return plan[coords.Item1, coords.Item2] != 'X';
         }
 
         public void Draw(Graphics g, int windowWidth, int windowHeight)
@@ -187,15 +456,28 @@ namespace Pacman
                     if (c == 'P')
                     {
                         // the icons are in the same order as enum Direction
-                        // there are twice as many (opened and closed) and they start on index 4
+                        // there are twice as many (opened and closed) and they start on index 8
                         if (pacman.opened)
                             { indexObrazku++; }
-                        indexObrazku += 4 + 2 * (int)pacman.direction;
+                        indexObrazku += 9 + 2 * (int)pacman.direction;
                     }
                     else 
                         { indexObrazku = " X.$".IndexOf(c); }
                     g.DrawImage(icons[indexObrazku], x * sx + startx, y * sx + starty);
                 }
+            }
+
+            foreach (Ghost gh in ghosts)
+            {
+                int indexObrazku;
+                if (frightenedMode)
+                { 
+                    indexObrazku = 8; //specific to this image; edit if necessary
+                }
+                else
+                    { indexObrazku = "rpbo".IndexOf(gh.id) + 4; }
+                g.DrawImage(icons[indexObrazku], gh.location.Item1 * sx + startx, 
+                    gh.location.Item2 * sx + starty);
             }
         }
 
@@ -216,28 +498,56 @@ namespace Pacman
 
         public void LoadMap(string path)
         {
+            ghosts = new List<Ghost>();
+            disabledGhosts = new Queue<Ghost>();
             StreamReader sr = new StreamReader(path);
             width = int.Parse(sr.ReadLine());
             height = int.Parse(sr.ReadLine());
             plan = new char[width, height];
 
+            BlueGhost blue = new BlueGhost(this, 0, 0);
             for (int y = 0; y < height; y++)
             {
                 string line = sr.ReadLine();
                 for (int x = 0; x < width; x++)
                 {
-                    char znak = line[x];
-                    plan[x, y] = znak;
+                    char sign = line[x];
+                    plan[x, y] = sign;
 
-                    switch (znak)
+                    switch (sign)
                     {
                         case 'P':
                             this.pacman = new Pacman(this, x, y);
                             break;
-
                         case '.':
                         case '$':
                             statusbar.coinsLeft++;
+                            break;
+                        // the ghosts are not in plan
+                        case 'r':
+                            RedGhost red = new RedGhost(this, x, y);
+                            ghosts.Add(red);
+                            spawn = (x, y);
+                            plan[x, y] = ' ';
+                            break;
+                        case 'p':
+                            PinkGhost pink = new PinkGhost(this, x, y);
+                            ghosts.Add(pink);
+                            disabledGhosts.Enqueue(pink);
+                            plan[x, y] = ' ';
+                            break;
+                        case 'o':
+                            OrangeGhost orange = new OrangeGhost(this, x, y);
+                            ghosts.Add(orange);
+                            disabledGhosts.Enqueue(orange);
+                            plan[x, y] = ' ';
+                            break;
+                        case 'b':
+                            blue.location = (x, y);
+                            blue.origin = (x, y);
+                            ghosts.Add(blue);
+                            disabledGhosts.Enqueue(blue);
+                            plan[x, y] = ' ';
                             break;
                         default:
                             break;
@@ -245,32 +555,112 @@ namespace Pacman
                 }
             }
             sr.Close();
+            foreach (Ghost gh in ghosts)
+            { 
+                gh.pacman = pacman;
+            }
+            blue.ghosts = ghosts;
             statusbar.width = width * sx;
         }
 
-        public void Move(int from_x, int from_y, int to_x, int to_y)
+        public void Reset()
         {
-            // First version: we suppose we're moving Pacman
+            frightenedMode = false;
+            disabledGhosts.Clear();
+            plan[pacman.location.Item1, pacman.location.Item2] = ' ';
+            pacman.location = pacman.origin;
+            plan[pacman.location.Item1, pacman.location.Item2] = 'P';
 
-            char to = plan[to_x, to_y];
-            // TODO: if it's a ghost moving, a coin must reveal itself
-            // if there is a ghost, the game ends
-            if (to == '.' || to == '$')
+            foreach (Ghost gh in ghosts)
+            {
+                gh.location = gh.origin;
+                if (gh.origin == spawn)
+                {
+                    // trick to enable RedGhost without creating new one
+                    gh.enabled = true;
+                }
+                else
+                { 
+                    gh.enabled = false;
+                    disabledGhosts.Enqueue(gh);
+                }
+            }
+
+        }
+
+        public void MovePacman((int, int) from, (int, int) to)
+        {
+            // we suppose the move is valid which is checked by other functions
+            char to_item = plan[to.Item1, to.Item2];
+            if ( to_item != ' ') // it's a coin
             {
                 statusbar.coinsLeft--;
                 statusbar.score++;
                 if (statusbar.coinsLeft == 0)
-                    { state = State.win; }
+                { state = State.win; }
+                if ( to_item == '$')
+                {
+                    statusbar.score += 9;
+                    frightenedMode = true;
+                    timer.lastFrightened = timer.ticks;
+                }
             }
-            plan[to_x, to_y] = 'P';
-            plan[from_x, from_y] = ' ';
-            pacman.x = to_x;
-            pacman.y = to_y;
+            plan[to.Item1, to.Item2] = 'P';
+            plan[from.Item1, from.Item2] = ' ';
+            pacman.location = to;
         }
+
+        private void ResolveGhostEncounter(Ghost gh)
+        {
+            if (!frightenedMode)
+            {
+                statusbar.livesLeft--;
+                state = State.loss;
+            }
+            else
+            {
+                statusbar.score += 50;
+                if (disabledGhosts.Count == 0)
+                    { timer.lastEnabled = timer.ticks; }
+                disabledGhosts.Enqueue(gh);
+                gh.location = home;
+                gh.enabled = false;
+            }
+        }
+
         public void MoveObjects(KeyPressed key)
         {
-            pacman.Turn(key);
-            pacman.Move();
+            if (timer.ticks % pacman.slowness == 0)
+            {
+                pacman.Turn(key);
+                pacman.Move();
+            }
+
+            if ((timer.ticks - timer.lastEnabled) % timer.enablePeriod == 0 && disabledGhosts.Count != 0)
+            {
+                Ghost next = disabledGhosts.Dequeue();
+                next.enabled = true;
+                next.location = spawn;
+                timer.lastEnabled = timer.ticks;
+            }
+            foreach (Ghost gh in ghosts)
+            {
+                // have to check twice or they could cross and not be on same coords
+                // = the ghosts are smart and stay on the spot if needed
+                if (gh.location == pacman.location)
+                {
+                    ResolveGhostEncounter(gh);
+                }
+                else if (gh.enabled)
+                {
+                    if (timer.ticks % gh.slowness == 0)
+                        { gh.MoveGhost(); }
+                    if (gh.location == pacman.location)
+                        { ResolveGhostEncounter(gh); }
+                }
+                if (state == State.loss)
+                    { break; }
+            }
         }
     }
 }
