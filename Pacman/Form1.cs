@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Pacman
 {
     public partial class Form1 : Form
@@ -9,7 +11,6 @@ namespace Pacman
         KeyPressed keyPressed;
         Size size;
         bool frozen;
-        private int tickCounter = 0;
         private BufferedGraphicsContext context;
         private BufferedGraphics grafx;
 
@@ -42,7 +43,8 @@ namespace Pacman
                     timerMenu.Enabled = false;
                     this.statusBar = new StatusBar(lLives, lScore, bMenu);
                     map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar);
+                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar,
+                        timerGame);
                     timerGame.Enabled = true;
                     break;
                 case Screen.Menu:
@@ -55,7 +57,7 @@ namespace Pacman
                     toGame = false;
                     break;
             }
-            tickCounter = 0;
+            timerGame.ticks = 0;
             keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
             bSettings.Visible = !toGame;
@@ -113,8 +115,11 @@ namespace Pacman
                             eraseScreen();
                             frozen = false;
                         }
-                        tickCounter++;
-                        map.MoveObjects(keyPressed, tickCounter);
+                        timerGame.ticks++;
+                        if (map.frightenedMode && 
+                            timerGame.ticks - timerGame.lastFrightened == timerGame.frightenedPeriod)
+                            { map.frightenedMode = false; }
+                        map.MoveObjects(keyPressed);
                         map.Draw(grafx.Graphics, ClientSize.Width, ClientSize.Height);
                         Refresh();
                         statusBar.Draw(map);
@@ -178,5 +183,17 @@ namespace Pacman
             keyPressed = KeyPressed.none;
         }
 
+    }
+
+    public class GameTimer : System.Windows.Forms.Timer
+    {
+        public int ticks = 0;
+        public int lastEnabled = 0;
+        public int enablePeriod = 100;
+        public int lastFrightened = 0;
+        public int frightenedPeriod = 300;
+        public GameTimer(IContainer container) : base(container)
+        {
+        }
     }
 }

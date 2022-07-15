@@ -399,8 +399,6 @@ namespace Pacman
     {
         private char[,] plan;
         private (int, int) spawn;
-        private int lastEnabled = 0;
-        private int enablePeriod = 100;
         public bool frightenedMode = false;
         public int width;
         public int height;
@@ -414,12 +412,14 @@ namespace Pacman
 
         public Pacman pacman;
         public StatusBar statusbar;
+        private GameTimer timer;
         public List<Ghost> ghosts;
         private Queue<Ghost> disabledGhosts;
 
-        public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
+        public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar, GameTimer timerGame)
         {
             this.statusbar = statusBar;
+            this.timer = timerGame;
             LoadIcons(iconsPath);
             LoadMap(mapPath);
 
@@ -463,7 +463,13 @@ namespace Pacman
 
             foreach (Ghost gh in ghosts)
             {
-                int indexObrazku = "rpbo".IndexOf(gh.id) + 4;
+                int indexObrazku;
+                if (frightenedMode)
+                { 
+                    indexObrazku = 8; //specific to this image; edit if necessary
+                }
+                else
+                    { indexObrazku = "rpbo".IndexOf(gh.id) + 4; }
                 g.DrawImage(icons[indexObrazku], gh.location.Item1 * sx + startx, 
                     gh.location.Item2 * sx + starty);
             }
@@ -565,6 +571,7 @@ namespace Pacman
                 {
                     statusbar.score += 9;
                     frightenedMode = true;
+                    timer.lastFrightened = timer.ticks;
                 }
             }
             plan[to.Item1, to.Item2] = 'P';
@@ -578,15 +585,15 @@ namespace Pacman
             }
         }
 
-        public void MoveObjects(KeyPressed key, int tickCounter)
+        public void MoveObjects(KeyPressed key)
         {
-            if (tickCounter % pacman.slowness == 0)
+            if (timer.ticks % pacman.slowness == 0)
             {
                 pacman.Turn(key);
                 pacman.Move();
             }
 
-            if (tickCounter % enablePeriod == 0 && disabledGhosts.Count != 0)
+            if (timer.ticks % timer.enablePeriod == 0 && disabledGhosts.Count != 0)
             {
                 Ghost next = disabledGhosts.Dequeue();
                 next.enabled = true;
@@ -600,7 +607,7 @@ namespace Pacman
                     { state = State.loss; }
                 else if (gh.enabled)
                 {
-                    if (tickCounter % gh.slowness == 0)
+                    if (timer.ticks % gh.slowness == 0)
                         { gh.Move(); }
                     if (gh.location == pacman.location)
                         { state = State.loss; }

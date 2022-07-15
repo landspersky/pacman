@@ -34,7 +34,7 @@
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
             this.bSettings = new System.Windows.Forms.Button();
-            this.timerGame = new System.Windows.Forms.Timer(this.components);
+            this.timerGame = new GameTimer(this.components);
             this.lLives = new System.Windows.Forms.Label();
             this.lScore = new System.Windows.Forms.Label();
             this.bMenu = new System.Windows.Forms.Button();
@@ -151,7 +151,7 @@
         private Label lTitle;
         private Label lAuthor;
         private Button bSettings;
-        private System.Windows.Forms.Timer timerGame;
+        private GameTimer timerGame;
         private Label lLives;
         private Label lScore;
         private Button bMenu;
