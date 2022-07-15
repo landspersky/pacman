@@ -158,7 +158,7 @@ namespace Pacman
         public RedGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'r';
-            slowness = 6;
+            slowness = 12;
         }
 
         public override void Move()
@@ -175,7 +175,7 @@ namespace Pacman
         public PinkGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'p';
-            slowness = 5;
+            slowness = 10;
         }
 
         public override void Move()
@@ -209,7 +209,7 @@ namespace Pacman
         public OrangeGhost(Map map, int x, int y) : base(map, x, y)
         {
             id = 'o';
-            slowness = 5;
+            slowness = 10;
             corners = new (int, int)[] { (1, 1), (map.width - 2, 1), 
                 (map.width - 2, map.height - 2), (1, map.height - 2) };
         }
@@ -258,19 +258,23 @@ namespace Pacman
         public override void Move()
         {
             // goes to the center of gravity of other characters flipped by diagonal
-            int total_x = 0;
-            int total_y = 0;
+            int center_x = 0;
+            int center_y = 0;
             foreach (Ghost gh in ghosts)
             {
                 if (gh != this)
                 {
-                    total_x += gh.x;
-                    total_y += gh.y;
+                    center_x += gh.x;
+                    center_y += gh.y;
                 }
             }
-            total_x += pacman.x;
-            total_y += pacman.y;
-            (int, int) to = NextOnShortest(total_y / ghosts.Count, total_x / ghosts.Count);
+            center_x = (center_x + pacman.x) / ghosts.Count;
+            center_y = (center_y + pacman.y) / ghosts.Count;
+            int midx = map.width / 2;
+            int midy = map.height / 2;
+
+
+            (int, int) to = NextOnShortest(midx + midx - center_x, midy + midy - center_y);
             x = to.Item1;
             y = to.Item2;
         }
