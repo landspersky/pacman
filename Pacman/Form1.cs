@@ -43,9 +43,7 @@ namespace Pacman
                     toGame = true;
                     timerMenu.Enabled = false;
                     this.statusBar = new StatusBar(lLives, lScore, bMenu, lives, score);
-                    map = new Map(this, @"C:\Users\admin\source\repos\Pacman\Pacman\plan.txt",
-                        @"C:\Users\admin\source\repos\Pacman\Pacman\basic_icons.png", statusBar,
-                        timerGame);
+                    map = new Map(this, "plan.txt", "basic_icons.png", statusBar, timerGame);
                     timerGame.Enabled = true;
                     break;
                 case Screen.Menu:
@@ -61,7 +59,6 @@ namespace Pacman
             timerGame.ticks = 0;
             keyPressed = KeyPressed.none;
             bPlay.Visible = !toGame;
-            bSettings.Visible = !toGame;
             lAuthor.Visible = !toGame;
             lTitle.Visible = !toGame;
 
@@ -85,9 +82,6 @@ namespace Pacman
 
             bPlay.Left = midx - bPlay.Width / 2;
             bPlay.Top = ClientSize.Height * 3 / 5;
-
-            bSettings.Left = ClientSize.Width - bSettings.Width - padding;
-            bSettings.Top = padding;
         }
 
         private void EraseScreen()

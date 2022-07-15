@@ -32,7 +32,7 @@
             this.bPlay = new System.Windows.Forms.Button();
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
-            this.timerGame = new Pacman.GameTimer(this.components);
+            this.timerGame = new GameTimer(this.components);
             this.lLives = new System.Windows.Forms.Label();
             this.lScore = new System.Windows.Forms.Label();
             this.bMenu = new System.Windows.Forms.Button();
