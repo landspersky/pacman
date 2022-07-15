@@ -67,6 +67,7 @@ namespace Pacman
     abstract class Ghost : Character
     {
         public char id;
+        public bool enabled = false;
         public Pacman pacman;
         private Random generator = new Random();
 
@@ -376,6 +377,9 @@ namespace Pacman
     class Map
     {
         private char[,] plan;
+        private (int, int) spawn;
+        private int lastEnabled = 0;
+        private int enablePeriod = 100;
         public int width;
         public int height;
         public int startx;
@@ -389,7 +393,7 @@ namespace Pacman
         public Pacman pacman;
         public StatusBar statusbar;
         public List<Ghost> ghosts;
-        // other atributes
+        private Queue<Ghost> disabledGhosts;
 
         public Map(Form1 form, string mapPath, string iconsPath, StatusBar statusBar)
         {
@@ -460,6 +464,7 @@ namespace Pacman
         public void LoadMap(string path)
         {
             ghosts = new List<Ghost>();
+            disabledGhosts = new Queue<Ghost>();
             StreamReader sr = new StreamReader(path);
             width = int.Parse(sr.ReadLine());
             height = int.Parse(sr.ReadLine());
@@ -486,23 +491,28 @@ namespace Pacman
                         // the ghosts are not in plan
                         case 'r':
                             RedGhost red = new RedGhost(this, x, y);
+                            red.enabled = true;
                             ghosts.Add(red);
+                            spawn = (x, y);
                             plan[x, y] = ' ';
                             break;
                         case 'p':
                             PinkGhost pink = new PinkGhost(this, x, y);
                             ghosts.Add(pink);
+                            disabledGhosts.Enqueue(pink);
                             plan[x, y] = ' ';
                             break;
                         case 'o':
                             OrangeGhost orange = new OrangeGhost(this, x, y);
                             ghosts.Add(orange);
+                            disabledGhosts.Enqueue(orange);
                             plan[x, y] = ' ';
                             break;
                         case 'b':
                             blue.x = x;
                             blue.y = y;
                             ghosts.Add(blue);
+                            disabledGhosts.Enqueue(blue);
                             plan[x, y] = ' ';
                             break;
                         default:
@@ -522,7 +532,6 @@ namespace Pacman
         public void MovePacman(int from_x, int from_y, int to_x, int to_y)
         {
             // we suppose the move is valid which is checked by other functions
-            char from = plan[from_x, from_y];
             char to = plan[to_x, to_y];
             if (to == '.' || to == '$')
             {
@@ -551,14 +560,20 @@ namespace Pacman
                 pacman.Move();
             }
 
-            Pacman var = pacman;
+            if (tickCounter % enablePeriod == 0 && disabledGhosts.Count != 0)
+            {
+                Ghost next = disabledGhosts.Dequeue();
+                next.enabled = true;
+                next.x = spawn.Item1;
+                next.y = spawn.Item2;
+            }
             foreach (Ghost gh in ghosts)
             {
                 // have to check twice or they could cross and not be on same coords
                 // = the ghosts are smart and stay on the spot if needed
                 if (gh.x == pacman.x && gh.y == pacman.y)
                     { state = State.loss; }
-                else
+                else if (gh.enabled)
                 {
                     if (tickCounter % gh.slowness == 0)
                         { gh.Move(); }
