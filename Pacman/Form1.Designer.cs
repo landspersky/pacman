@@ -29,12 +29,10 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.bPlay = new System.Windows.Forms.Button();
             this.lTitle = new System.Windows.Forms.Label();
             this.lAuthor = new System.Windows.Forms.Label();
-            this.bSettings = new System.Windows.Forms.Button();
-            this.timerGame = new GameTimer(this.components);
+            this.timerGame = new Pacman.GameTimer(this.components);
             this.lLives = new System.Windows.Forms.Label();
             this.lScore = new System.Windows.Forms.Label();
             this.bMenu = new System.Windows.Forms.Button();
@@ -71,18 +69,6 @@
             this.lAuthor.Size = new System.Drawing.Size(121, 15);
             this.lAuthor.TabIndex = 4;
             this.lAuthor.Text = "by Jakub Landsperský";
-            // 
-            // bSettings
-            // 
-            this.bSettings.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.bSettings.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.bSettings.Image = ((System.Drawing.Image)(resources.GetObject("bSettings.Image")));
-            this.bSettings.Location = new System.Drawing.Point(743, 9);
-            this.bSettings.Margin = new System.Windows.Forms.Padding(0);
-            this.bSettings.Name = "bSettings";
-            this.bSettings.Size = new System.Drawing.Size(48, 47);
-            this.bSettings.TabIndex = 5;
-            this.bSettings.UseVisualStyleBackColor = true;
             // 
             // timerGame
             // 
@@ -134,7 +120,6 @@
             this.Controls.Add(this.bMenu);
             this.Controls.Add(this.lScore);
             this.Controls.Add(this.lLives);
-            this.Controls.Add(this.bSettings);
             this.Controls.Add(this.lAuthor);
             this.Controls.Add(this.lTitle);
             this.Controls.Add(this.bPlay);
@@ -150,7 +135,6 @@
         private Button bPlay;
         private Label lTitle;
         private Label lAuthor;
-        private Button bSettings;
         private GameTimer timerGame;
         private Label lLives;
         private Label lScore;

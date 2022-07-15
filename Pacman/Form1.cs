@@ -25,7 +25,7 @@ namespace Pacman
             grafx = context.Allocate(this.CreateGraphics(),
                 new Rectangle(0, 0, this.Width, this.Height));
 
-            initializeScreen(Screen.Menu);
+            InitializeScreen(Screen.Menu);
         }
 
 
@@ -34,7 +34,7 @@ namespace Pacman
             grafx.Render(e.Graphics);
         }
 
-        private void initializeScreen(Screen screen, int lives, int score)
+        private void InitializeScreen(Screen screen, int lives, int score)
         {
             bool toGame;
             switch (screen)
@@ -51,7 +51,7 @@ namespace Pacman
                 case Screen.Menu:
                     toGame = false;
                     timerGame.Enabled = false;
-                    eraseScreen();
+                    EraseScreen();
                     timerMenu.Enabled = true;
                     break;
                 default:
@@ -70,9 +70,9 @@ namespace Pacman
             bMenu.Visible = toGame;
         }
 
-        private void initializeScreen(Screen screen)
-            { initializeScreen(screen, 3, 0); }
-        private void drawMenuScreen()
+        private void InitializeScreen(Screen screen)
+            { InitializeScreen(screen, 3, 0); }
+        private void DrawMenuScreen()
         {
             int midx = ClientSize.Width / 2;
             int padding = 10;
@@ -90,7 +90,7 @@ namespace Pacman
             bSettings.Top = padding;
         }
 
-        private void eraseScreen()
+        private void EraseScreen()
         {
             // Make the screen black
             SolidBrush blackBrush = new SolidBrush(Color.Black);
@@ -101,7 +101,7 @@ namespace Pacman
 
         private void bPlay_Click(object sender, EventArgs e)
         {
-            initializeScreen(Screen.Game);
+            InitializeScreen(Screen.Game);
         }
 
         private void timerGame_Tick(object sender, EventArgs e)
@@ -115,7 +115,7 @@ namespace Pacman
                     {
                         if (frozen)
                         {
-                            eraseScreen();
+                            EraseScreen();
                             frozen = false;
                         }
                         timerGame.ticks++;
@@ -135,12 +135,12 @@ namespace Pacman
                     {
                         MessageBox.Show("Great. I think you've had enough," +
                             " please do something else, the Pacman is tired and needs to take a break.");
-                        initializeScreen(Screen.Menu);
+                        InitializeScreen(Screen.Menu);
                     }
                     else
                     { 
                         timerGame.Reset();
-                        initializeScreen(Screen.Game, statusBar.livesLeft, statusBar.score);
+                        InitializeScreen(Screen.Game, statusBar.livesLeft, statusBar.score);
                         level++;
                     }
                     break;
@@ -149,7 +149,7 @@ namespace Pacman
                     if (statusBar.livesLeft == 0)
                     {
                         MessageBox.Show("You lost!");
-                        initializeScreen(Screen.Menu);
+                        InitializeScreen(Screen.Menu);
                     }
                     else
                     {
@@ -168,12 +168,12 @@ namespace Pacman
 
         private void timerMenu_Tick(object sender, EventArgs e)
         {
-            drawMenuScreen();
+            DrawMenuScreen();
         }
 
         private void bMenu_Click(object sender, EventArgs e)
         {
-            initializeScreen(Screen.Menu);
+            InitializeScreen(Screen.Menu);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
