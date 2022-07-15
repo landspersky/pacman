@@ -399,6 +399,7 @@ namespace Pacman
     {
         private char[,] plan;
         private (int, int) spawn;
+        private (int, int) home = (9, 10);
         public bool frightenedMode = false;
         public int width;
         public int height;
@@ -577,11 +578,20 @@ namespace Pacman
             plan[to.Item1, to.Item2] = 'P';
             plan[from.Item1, from.Item2] = ' ';
             pacman.location = to;
+        }
 
-            foreach (Ghost gh in ghosts)
+        private void ResolveGhostEncounter(Ghost gh)
+        {
+            if (!frightenedMode)
+                { state = State.loss; }
+            else
             {
-                if (gh.location == pacman.location)
-                    { state = State.loss; }
+                statusbar.score += 50;
+                if (disabledGhosts.Count == 0)
+                    { timer.lastEnabled = timer.ticks; }
+                disabledGhosts.Enqueue(gh);
+                gh.location = home;
+                gh.enabled = false;
             }
         }
 
@@ -593,24 +603,27 @@ namespace Pacman
                 pacman.Move();
             }
 
-            if (timer.ticks % timer.enablePeriod == 0 && disabledGhosts.Count != 0)
+            if ((timer.ticks - timer.lastEnabled) % timer.enablePeriod == 0 && disabledGhosts.Count != 0)
             {
                 Ghost next = disabledGhosts.Dequeue();
                 next.enabled = true;
                 next.location = spawn;
+                timer.lastEnabled = timer.ticks;
             }
             foreach (Ghost gh in ghosts)
             {
                 // have to check twice or they could cross and not be on same coords
                 // = the ghosts are smart and stay on the spot if needed
                 if (gh.location == pacman.location)
-                    { state = State.loss; }
+                {
+                    ResolveGhostEncounter(gh);
+                }
                 else if (gh.enabled)
                 {
                     if (timer.ticks % gh.slowness == 0)
-                        { gh.Move(); }
+                        { gh.MoveGhost(); }
                     if (gh.location == pacman.location)
-                        { state = State.loss; }
+                        { ResolveGhostEncounter(gh); }
                 }
             }
         }

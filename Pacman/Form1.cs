@@ -116,8 +116,7 @@ namespace Pacman
                             frozen = false;
                         }
                         timerGame.ticks++;
-                        if (map.frightenedMode && 
-                            timerGame.ticks - timerGame.lastFrightened == timerGame.frightenedPeriod)
+                        if (timerGame.ticks - timerGame.lastFrightened == timerGame.frightenedPeriod)
                             { map.frightenedMode = false; }
                         map.MoveObjects(keyPressed);
                         map.Draw(grafx.Graphics, ClientSize.Width, ClientSize.Height);
@@ -194,6 +193,13 @@ namespace Pacman
         public int frightenedPeriod = 300;
         public GameTimer(IContainer container) : base(container)
         {
+        }
+
+        public void Reset()
+        {
+            ticks = 0;
+            lastEnabled = 0;
+            lastFrightened = 0;
         }
     }
 }
