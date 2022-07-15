@@ -67,6 +67,7 @@ namespace Pacman
     {
         public char id;
         public bool enabled = false;
+        private (int, int) lastLocation = (0, 0);
         public Pacman pacman;
         private Random generator = new Random();
 
@@ -81,7 +82,7 @@ namespace Pacman
                 { return location; }
 
             Queue<(int, int)> q = new Queue<(int, int)>();
-            q.Enqueue((x, y));
+            q.Enqueue(location);
             Dictionary<(int, int), (int, int)> firstParent = new Dictionary<(int, int), (int, int)>();
             (int, int) current = location;
 
@@ -116,7 +117,7 @@ namespace Pacman
             {
                 // when the location is in inaccessible, eg ghost box
                 if (q.Count == 0)
-                    { return (x, y); }
+                    { return location; }
                 current = q.Dequeue();
                 foreach (Direction d in Enum.GetValues(typeof(Direction)))
                 {
@@ -150,6 +151,33 @@ namespace Pacman
         {
             return Distance(coords, location);
         }
+
+        private void MoveRandomly()
+        {
+            // moves randomly, preferably to a location different to last one
+            List<(int, int)> possibleMoves = new List<(int, int)>();
+            foreach (Direction d in Enum.GetValues(typeof(Direction)))
+            {
+                (int, int) neighbour = TargetCoords(d);
+                if ( map.IsFreeSpace(neighbour) && neighbour != lastLocation)
+                    { possibleMoves.Add(neighbour); }
+            }
+            if (possibleMoves.Count == 0) 
+                { location = lastLocation; }
+            else
+                { location = possibleMoves[generator.Next(possibleMoves.Count)]; }
+
+
+        }
+        public void MoveGhost()
+        {
+            (int, int) temp = location;
+            if (! map.frightenedMode )
+                { Move(); }
+            else
+                { MoveRandomly(); }
+            lastLocation = temp;
+        }
     }
 
     class RedGhost : Ghost
@@ -163,7 +191,7 @@ namespace Pacman
         public override void Move()
         {
             // chases after pacman
-            (int, int) to = NextOnShortest(pacman.x, pacman.y);
+            (int, int) to = NextOnShortest(pacman.location);
             location = to;
         }
     }
@@ -196,9 +224,7 @@ namespace Pacman
             while (! map.IsFreeSpace(temp))
                 { temp = TargetCoords(d, temp); }
 
-            (int, int) to = NextOnShortest(temp);
-            x = to.Item1;
-            y = to.Item2;
+            location = NextOnShortest(temp);
         }
     }
 
@@ -221,7 +247,7 @@ namespace Pacman
         {
             // chases after pacman unless too close, then goes to corner for a while
 
-            double distance = Distance((pacman.x, pacman.y));
+            double distance = Distance(pacman.location);
             if (distance < 5)
                 { bloodthirsty = false; }
             if ( location == corners[cornerIndex] || steps == 10)
@@ -232,7 +258,7 @@ namespace Pacman
             }
             (int, int) to;
             if (bloodthirsty)
-                { to = NextOnShortest(pacman.x, pacman.y); }
+                { to = NextOnShortest(pacman.location); }
             else
             { 
                 to = NextOnShortest(corners[cornerIndex]);
@@ -375,6 +401,7 @@ namespace Pacman
         private (int, int) spawn;
         private int lastEnabled = 0;
         private int enablePeriod = 100;
+        public bool frightenedMode = false;
         public int width;
         public int height;
         public int startx;
@@ -426,7 +453,7 @@ namespace Pacman
                         // there are twice as many (opened and closed) and they start on index 8
                         if (pacman.opened)
                             { indexObrazku++; }
-                        indexObrazku += 8 + 2 * (int)pacman.direction;
+                        indexObrazku += 9 + 2 * (int)pacman.direction;
                     }
                     else 
                         { indexObrazku = " X.$".IndexOf(c); }
@@ -437,7 +464,8 @@ namespace Pacman
             foreach (Ghost gh in ghosts)
             {
                 int indexObrazku = "rpbo".IndexOf(gh.id) + 4;
-                g.DrawImage(icons[indexObrazku], gh.x * sx + startx, gh.y * sx + starty);
+                g.DrawImage(icons[indexObrazku], gh.location.Item1 * sx + startx, 
+                    gh.location.Item2 * sx + starty);
             }
         }
 
@@ -527,12 +555,17 @@ namespace Pacman
         {
             // we suppose the move is valid which is checked by other functions
             char to_item = plan[to.Item1, to.Item2];
-            if (to_item == '.' || to_item == '$')
+            if ( to_item != ' ') // it's a coin
             {
                 statusbar.coinsLeft--;
                 statusbar.score++;
                 if (statusbar.coinsLeft == 0)
                 { state = State.win; }
+                if ( to_item == '$')
+                {
+                    statusbar.score += 9;
+                    frightenedMode = true;
+                }
             }
             plan[to.Item1, to.Item2] = 'P';
             plan[from.Item1, from.Item2] = ' ';
