@@ -4,8 +4,6 @@ This is my own implementation of the popular game Pacman. It was put together un
 
 ---
 
-Gameplay showcase
-![](./Images/gameplay1.png)
+![](./Images/gameplay1.png "Gameplay showcase")
 
-The hunters become the hunted!
-![](./Images/gameplay2.png)
+![](./Images/gameplay2.png "The hunters become the hunted!")
